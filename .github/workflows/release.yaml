@@ -149,12 +149,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Publish Bourse order book library
-        run: cargo publish -p bourse-book --token ${CRATES_TOKEN}
-        env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+      # - name: Publish Bourse order book library
+      #   run: cargo publish -p bourse-book --token ${CRATES_TOKEN}
+      #   env:
+      #     CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
       - name: Publish Bourse discrete event library
-        run: cargo publish -p bourse-book --token ${CRATES_TOKEN}
+        run: cargo publish -p bourse-de --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
       - name: Publish Bourse macros
@@ -177,6 +177,7 @@ jobs:
 
     # Specify runner + deployment step
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - run: echo "Releasing"
+      # - name: Deploy to GitHub Pages
+      #   id: deployment
+      #   uses: actions/deploy-pages@v4
