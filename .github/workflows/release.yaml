@@ -153,12 +153,12 @@ jobs:
       #   run: cargo publish -p bourse-book --token ${CRATES_TOKEN}
       #   env:
       #     CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
-      - name: Publish Bourse discrete event library
-        run: cargo publish -p bourse-de --token ${CRATES_TOKEN}
-        env:
-          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
       - name: Publish Bourse macros
         run: cargo publish -p bourse-macros --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+      - name: Publish Bourse discrete event library
+        run: cargo publish -p bourse-de --token ${CRATES_TOKEN}
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
 
