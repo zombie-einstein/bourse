@@ -139,8 +139,8 @@ jobs:
         pattern: wheels-*
         merge-multiple: true
         path: dist/
-    # - name: Publish distribution 📦 to PyPI
-    #   uses: pypa/gh-action-pypi-publish@release/v1
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
 
   release_rust:
     runs-on: ubuntu-latest
@@ -149,10 +149,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      # - name: Publish Bourse order book library
-      #   run: cargo publish -p bourse-book --token ${CRATES_TOKEN}
-      #   env:
-      #     CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+      - name: Publish Bourse order book library
+        run: cargo publish -p bourse-book --token ${CRATES_TOKEN}
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
       - name: Publish Bourse macros
         run: cargo publish -p bourse-macros --token ${CRATES_TOKEN}
         env:
@@ -177,7 +177,6 @@ jobs:
 
     # Specify runner + deployment step
     steps:
-      - run: echo "Releasing"
-      # - name: Deploy to GitHub Pages
-      #   id: deployment
-      #   uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
