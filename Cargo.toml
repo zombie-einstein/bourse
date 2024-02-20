@@ -16,7 +16,7 @@ authors = ["zombie-einstein"]
 description = "Agent based market simulation library"
 readme = "README.md"
 repository = "https://github.com/zombie-einstein/bourse/"
-keywords = ["agent-based modelling", "simulation", "finance"]
+keywords = ["agent-based-model", "abm", "multi-agent ", "simulation", "finance"]
 categories = ["simulation", "finance", "science"]
 
 [workspace.dependencies]
