@@ -24,6 +24,25 @@ def run(
     are randomly shuffled and process, updating the state of
     the market.
 
+    Examples
+    --------
+
+    .. testsetup:: runner_docstring
+
+       import bourse
+
+       agents = []
+       env = env = bourse.core.StepEnv(0, 0, 1000)
+
+    .. testcode:: runner_docstring
+
+       market_data = bourse.step_sim.run(
+           env,     # Simulation environment
+           agents,  # List of agents
+           50,      # Number of steps
+           101      # Random seed
+       )
+
     Parameters
     ----------
     env: bourse.core.StepEnv
