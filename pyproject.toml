@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.urls]
-Source = "https://github.com/zombie-einstein/bourse"
+source = "https://github.com/zombie-einstein/bourse"
 docs = "https://zombie-einstein.github.io/bourse/"
 documentation = "https://zombie-einstein.github.io/bourse/"
 

@@ -25,8 +25,7 @@ for an annotated example.
 
 ### Getting Started
 
-The library consists of two core
-crates:
+The library consists of two core crates:
 
 - `bourse-book` a library implementing a market order
   book. Full documentation can be found
