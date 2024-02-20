@@ -1,0 +1,11 @@
+[package]
+name = "bourse-book"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Simulated market order book library"
+readme = "../../README.md"
+repository = "https://github.com/zombie-einstein/bourse/"
+keywords.workspace = true
+categories.workspace = true

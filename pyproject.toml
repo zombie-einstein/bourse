@@ -1,0 +1,74 @@
+[tool.maturin]
+module-name = "bourse.core"
+
+[build-system]
+requires = ["maturin>=1.2,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "bourse"
+version = "0.1.0"
+description = "Python API for a Rust stock market simulation library"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["finance", "agent-based modelling", "simulation", "reinforcement-learning"]
+license = { file = "LICENSE" }
+authors = [
+  { name = "zombie-einstein", email = "zombie-einstein@proton.me" },
+]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Rust",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+
+dependencies = [
+  "tqdm >= 4.66.2",
+  "pandas >= 2.2.0",
+]
+
+[project.urls]
+Source = "https://github.com/zombie-einstein/bourse"
+
+[tool.hatch.envs.dev]
+dependencies = [
+  "maturin >= 1.2.3",
+  "patchelf >= 0.17.2.1; platform_system != 'Darwin'",
+  "pytest >= 7.4.2",
+  "pre-commit >= 3.3.3",
+]
+
+[tool.hatch.envs.dev.scripts]
+develop = "maturin develop --release"
+lint = "pre-commit install && pre-commit run --all-files"
+test = "maturin develop --release && pytest -v tests"
+build = "maturin build --release"
+examples = "maturin build --release && python examples/random_trades.py"
+
+[tool.hatch.envs.jupyter]
+dependencies = [
+  "maturin >= 1.2.3",
+  "jupyter >= 1.0.0",
+  "matplotlib >= 3.8.2",
+  "pyarrow >= 14.0.2",
+]
+
+[tool.hatch.envs.jupyter.scripts]
+notebook = "maturin develop --release && jupyter notebook --notebook-dir=./notebooks"
+
+[tool.hatch.envs.docs]
+dependencies = [
+  "maturin >= 1.2.3",
+  "patchelf >= 0.17.2.1; platform_system != 'Darwin'",
+  "sphinx >= 7.2.6",
+  "sphinx-immaterial >= 0.11.10",
+]
+
+[tool.hatch.envs.docs.scripts]
+build = "maturin develop && sphinx-build -W -b html docs/source docs/build"

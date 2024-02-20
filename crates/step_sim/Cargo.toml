@@ -1,0 +1,18 @@
+[package]
+name = "bourse-de"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Discrete event market simulation library"
+readme = "../../README.md"
+repository = "https://github.com/zombie-einstein/bourse/"
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fastrand.workspace = true
+kdam = "0.3.0"
+
+bourse-book = { path="../order_book" , version="0.1.0" }
+bourse-macros = { path="../macros", version="0.1.0" }

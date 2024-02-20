@@ -1,0 +1,23 @@
+[workspace]
+
+members = [
+    "crates/macros",
+    "crates/order_book",
+    "crates/step_sim",
+    "rust"
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+authors = ["zombie-einstein"]
+description = "Agent based market simulation library"
+readme = "README.md"
+repository = "https://github.com/zombie-einstein/bourse/"
+keywords = ["agent-based modelling", "simulation", "finance"]
+categories = ["simulation", "finance", "science"]
+
+[workspace.dependencies]
+fastrand = "2.0.0"
