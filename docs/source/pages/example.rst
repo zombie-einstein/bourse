@@ -4,9 +4,16 @@ Simulation Example
 Here we will demonstrate a simple simulation
 where agents randomly place orders.
 
-We will first define the agent class
+First we import Bourse
 
-.. code-block:: python
+.. testcode:: random_example
+
+   import bourse
+
+
+then define an agent class
+
+.. testcode:: random_example
 
    class RandomAgent:
        def __init__(self, i, price_range):
@@ -18,33 +25,36 @@ We will first define the agent class
            # Place an order if not one live
            if self.order_id is None:
                price = rng.integers(*self.price_range)
-               side = bool(rng.random.choice([True, False]))
+               side = bool(rng.choice([True, False]))
                env.place_order(side, 10, self.i, price=price)
            # Cancel live order
            else:
                env.cancel_order(self.order_id)
                self.order_id = None
 
+For an agent to be part of a simulation it should
+define an ``update`` method that takes a
+:py:class:`numpy.random.Generator` and
+:py:class:`bourse.core.StepEnv` as arguments.
+
 In this example an agent places a randomly order if it
 does not have an existing one, and otherwise attempts to
-cancel it's current order. Simulation agents need to define
-an ``update`` function that takes a reference to a
-Numpy random generator and a simulation environment.
+cancel its current order.
 
 We then initialise an environment and set of agents
 
-.. code-block:: python
+.. testcode:: random_example
 
    seed = 101
-   n_steps = 200
+   n_steps = 50
 
-   agents = [RandomAgent(i, (10, 100)) for i in range(100)]
+   agents = [RandomAgent(i, (10, 100)) for i in range(50)]
    env = bourse.core.StepEnv(seed, 0, 100_000)
 
 We can then use :py:meth:`bourse.step_sim.run` to run the
 simulation
 
-.. code-block:: python
+.. testcode:: random_example
 
    market_data = bourse.step_sim.run(env, agents, n_steps, seed)
 

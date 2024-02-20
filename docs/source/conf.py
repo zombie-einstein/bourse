@@ -11,6 +11,7 @@ extensions = [
     "sphinx_immaterial",
     "sphinx_immaterial.apidoc.python.apigen",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.doctest",
 ]
 
 napoleon_google_docstring = False
