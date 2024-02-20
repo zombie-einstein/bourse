@@ -1,4 +1,4 @@
-/// Simulation execution functionality
+//! Simulation execution functionality
 use super::agents::AgentSet;
 use super::env::Env;
 use kdam::tqdm;
@@ -8,6 +8,29 @@ use kdam::tqdm;
 /// Each step updates the state of the agents (who
 /// in turn can submit instructions to the environment
 /// and then update the environment state)
+///
+/// # Examples
+///
+/// ```
+/// use bourse_de::{Env, sim_runner};
+/// use bourse_de::agents::AgentSet;
+/// use fastrand::Rng;
+///
+/// // Dummy agent-type
+/// struct Agents{}
+///
+/// impl AgentSet for Agents {
+///     fn update(
+///         &mut self, env: &mut Env, _rng: &mut Rng
+///     ) {}
+/// }
+///
+/// let mut env = bourse_de::Env::new(0, 1_000, true);
+/// let mut agents = Agents{};
+///
+/// // Run for 100 steps from seed 101
+/// sim_runner(&mut env, &mut agents, 101, 100)
+/// ```
 ///
 /// # Arguments
 ///
