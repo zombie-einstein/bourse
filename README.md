@@ -17,7 +17,9 @@ pip install bourse
 
 ### Examples
 
-See [here](examples/) for simulation examples.
+See [here](examples/) for simulation examples and
+[the docs](https://zombie-einstein.github.io/bourse/pages/example.html)
+for an annotated example.
 
 ## Rust
 
@@ -31,7 +33,7 @@ crates:
   [here](https://docs.rs/bourse-book/0.1.0/bourse_book/).
 
 - `bourse-de` a discrete-event market simulation library.
-  Full documentation can be found here
+  Full documentation can be found
   [here](https://docs.rs/bourse-de/0.1.0/bourse_de/)
 
 Both can be installed using cargo
