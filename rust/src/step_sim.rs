@@ -24,7 +24,7 @@ use pyo3::prelude::*;
 /// Examples
 /// --------
 ///
-/// .. code-block:: python
+/// .. testcode:: step_sim_docstring
 ///
 ///    import bourse
 ///
@@ -36,8 +36,17 @@ use pyo3::prelude::*;
 ///        seed, start_time, step_size
 ///    )
 ///
-///    order_id = env.place_order(True, 100, 99, price=50)
+///    # Create an order to be placed in the
+///    # next update
+///    order_id = env.place_order(
+///        True, 100, 99, price=50
+///    )
+///
+///    # Update the environment
 ///    env.step()
+///
+///    # Get price history data
+///    bid_price, ask_prices = env.get_prices()
 ///
 #[pyclass]
 pub struct StepEnv {
@@ -110,8 +119,8 @@ impl StepEnv {
     /// When disabled orders can be placed and modified
     /// but will not be matched.
     ///
-    /// Notes
-    /// -----
+    /// Warnings
+    /// --------
     /// There is currently no market uncrossing algorithm
     /// implemented.
     ///

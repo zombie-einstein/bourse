@@ -1,6 +1,14 @@
 use proc_macro::TokenStream;
 use quote::quote;
 
+/// Agent iteration macro
+///
+/// Implements the `AgentSet` trait for a struct
+/// with fields of agent types. It's often the case
+/// we want to implement `update` function that
+/// iterates over a heterogeneous set of agents,
+/// which this macro automates.
+///
 #[proc_macro_derive(Agents)]
 pub fn agents_derive(input: TokenStream) -> TokenStream {
     let ast = syn::parse(input).unwrap();

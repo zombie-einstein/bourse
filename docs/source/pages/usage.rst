@@ -18,7 +18,7 @@ Orderbook
 An orderbook is initialised with a start time
 (this is the time used to record events)
 
-.. code-block:: python
+.. testcode:: book_usage
 
    import bourse
 
@@ -27,7 +27,7 @@ An orderbook is initialised with a start time
 The state of the orderbook an then be directly
 updated, for example placing a limit bid order
 
-.. code-block:: python
+.. testcode:: book_usage
 
    order_vol = 10
    trader_id = 101
@@ -37,7 +37,7 @@ updated, for example placing a limit bid order
 
 or cancelling the same order
 
-.. code-block:: python
+.. testcode:: book_usage
 
    book.cancel_order(order_id)
 
@@ -49,7 +49,7 @@ The orderbook also tracks updates, for example
 trades executed on the order book can be
 retrieved with
 
-.. code-block:: python
+.. testcode:: book_usage
 
    trades = book.get_trades()
    # Convert trade data to a dataframe
@@ -58,7 +58,7 @@ retrieved with
    )
 
 See :py:class:`bourse.core.OrderBook`
-for details of the orderbook API.
+for details of the full order book API.
 
 Simulation Environment
 ----------------------
@@ -67,7 +67,9 @@ A simulation environment can be initialised from
 a random seed, start-time, and step-size (i.e. how
 long in time each simulated step is)
 
-.. code-block:: python
+.. testcode:: sim_usage
+
+   import bourse
 
    seed = 101
    step_size = 100_000
@@ -78,7 +80,7 @@ steps, with transactions submitted to a queue to
 be processed at the end of the step. For example
 placing new orders
 
-.. code-block:: python
+.. testcode:: sim_usage
 
    order_id_a = env.place_order(False, 100, 101, price=60)
    order_id_b = env.place_order(True, 100, 101, price=70)
@@ -91,7 +93,7 @@ time to correctly order transactions.
 The simulation environment also tracks market data for each
 step, for example bid-ask prices can be retrieved using
 
-.. code-block:: python
+.. testcode:: sim_usage
 
    bid_prices, ask_prices = env.get_prices()
 

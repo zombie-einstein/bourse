@@ -14,17 +14,20 @@ use pyo3::prelude::*;
 /// Examples
 /// --------
 ///
-/// .. code-block:: python
+/// .. testcode:: book_docstring
 ///
 ///    import bourse
 ///
 ///    book = bourse.core.OrderBook(0, True)
+///
 ///    # Place a new order
 ///    order_id = book.place_order(
 ///        True, 100, 0, price=50
 ///    )
+///
 ///    # Get touch prices
 ///    bid, ask = book.bid_ask()
+///
 ///    # Get the status of the order
 ///    status = book.order_status(order_id)
 ///
@@ -72,8 +75,8 @@ impl OrderBook {
     /// When disabled orders can be placed and modified
     /// but will not be matched.
     ///
-    /// Notes
-    /// -----
+    /// Warnings
+    /// --------
     /// There is currently no market uncrossing algorithm
     /// implemented.
     ///

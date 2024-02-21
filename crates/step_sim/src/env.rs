@@ -9,7 +9,35 @@ use bourse_book::OrderBook;
 use fastrand::Rng;
 use std::mem;
 
-// Simulation environment
+/// Discrete event simulation environment
+///
+/// Simulation environment designed for use in a
+/// discrete event simulation. Allows agents/users
+/// to submit order instructions, update
+/// the state of the simulation, and record the
+/// market data.
+///
+/// # Examples
+///
+/// ```
+/// use bourse_de;
+/// use bourse_de::types;
+/// use fastrand::Rng;
+///
+/// let mut env = bourse_de::Env::new(0, 1_000, true);
+/// let mut rng = Rng::with_seed(101);
+///
+/// // Submit a new order instruction
+/// let order_id = env.place_order(
+///     types::Side::Ask,
+///     100,
+///     101,
+///     Some(50),
+/// );
+///
+/// // Update the state of the market
+/// env.step(&mut rng)
+/// ```
 pub struct Env {
     /// Time-length of each simulation step
     step_size: Nanos,

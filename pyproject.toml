@@ -74,3 +74,4 @@ dependencies = [
 
 [tool.hatch.envs.docs.scripts]
 build = "maturin develop && sphinx-build -W -b html docs/source docs/build"
+test = "maturin develop && sphinx-build -W -b doctest docs/source docs/build"

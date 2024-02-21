@@ -1,4 +1,4 @@
-//! Type aliases and order data structures
+//! Type aliases and order data-structures
 
 /// Order-id
 pub type OrderId = usize;
