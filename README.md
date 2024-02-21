@@ -29,11 +29,11 @@ The library consists of two core crates:
 
 - `bourse-book` a library implementing a market order
   book. Full documentation can be found
-  [here](https://docs.rs/bourse-book/0.1.0/bourse_book/).
+  [here](https://docs.rs/bourse-book/latest/bourse_book/).
 
 - `bourse-de` a discrete-event market simulation library.
   Full documentation can be found
-  [here](https://docs.rs/bourse-de/0.1.0/bourse_de/)
+  [here](https://docs.rs/bourse-de/latest/bourse_de/)
 
 Both can be installed using cargo
 

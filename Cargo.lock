@@ -16,7 +16,7 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bourse"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bourse-book",
  "bourse-de",
@@ -27,11 +27,11 @@ dependencies = [
 
 [[package]]
 name = "bourse-book"
-version = "0.1.0"
+version = "0.1.1"
 
 [[package]]
 name = "bourse-de"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "bourse-book",
  "bourse-macros",
@@ -41,7 +41,7 @@ dependencies = [
 
 [[package]]
 name = "bourse-macros"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "quote",
  "syn 1.0.109",
