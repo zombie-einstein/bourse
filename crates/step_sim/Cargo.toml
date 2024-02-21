@@ -14,5 +14,5 @@ categories.workspace = true
 fastrand.workspace = true
 kdam = "0.3.0"
 
-bourse-book = { path="../order_book" , version="0.1.0" }
-bourse-macros = { path="../macros", version="0.1.0" }
+bourse-book = { path="../order_book" , version="0.1.1" }
+bourse-macros = { path="../macros", version="0.1.1" }
