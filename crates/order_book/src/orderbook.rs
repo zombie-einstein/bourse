@@ -36,6 +36,22 @@ pub struct OrderEntry {
 }
 
 /// Order book with order and trade history
+///
+/// # Examples
+///
+/// ```
+/// use bourse_book;
+/// use bourse_book::types;
+///
+/// let mut book = bourse_book::OrderBook::new(0, true);
+/// let order_id = book.create_order(
+///     types::Side::Bid, 50, 101, Some(50)
+/// );
+/// book.place_order(order_id);
+/// let (bid, ask) = book.bid_ask();
+/// book.cancel_order(order_id);
+/// ```
+///
 pub struct OrderBook {
     /// Simulated time, intended to represent
     /// nano-seconds, but arbitrary units can
@@ -69,8 +85,9 @@ impl OrderBook {
     ///
     /// # Arguments
     ///
-    /// - `start_time` - Time to assign to the order book
-    /// - `trading` - FLag to indicate if trades will be
+    /// - `start_time` - Simulated time to assign to the
+    ///   order book
+    /// - `trading` - Flag to indicate if trades will be
     ///   executed
     pub fn new(start_time: Nanos, trading: bool) -> Self {
         Self {
