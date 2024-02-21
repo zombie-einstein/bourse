@@ -93,7 +93,7 @@ jobs:
           python-version: '3.11'
       - name: Install hatch 🐣
         run: pip install hatch
-      - name: Test doc examples
-        run: hatch run docs:test
       - name: Install bourse and build docs 📚
         run: hatch run docs:build
+      - name: Test doc examples
+        run: hatch run docs:test
