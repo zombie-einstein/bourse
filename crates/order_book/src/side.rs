@@ -21,6 +21,8 @@ pub trait SideFunctionality {
     fn best_price(&self) -> Price;
     /// Get volume at best price
     fn best_vol(&self) -> Vol;
+    /// Get the volume and number at the best_price
+    fn best_vol_and_orders(&self) -> (Vol, u32);
     /// Get total volume
     fn vol(&self) -> Vol;
     /// Get the id of the highest priority order
@@ -32,7 +34,7 @@ pub struct OrderBookSide {
     /// Total volume
     vol: Vol,
     /// Volume at price levels
-    volumes: BTreeMap<Price, Vol>,
+    volumes: BTreeMap<Price, (Vol, u32)>,
     /// Order map and price-time priority queue
     orders: BTreeMap<(Price, Nanos), OrderId>,
 }
@@ -59,10 +61,11 @@ impl OrderBookSide {
         self.orders.insert((key.1, key.2), idx);
         match self.volumes.get_mut(&key.1) {
             Some(v) => {
-                *v += vol;
+                v.0 += vol;
+                v.1 += 1;
             }
             None => {
-                self.volumes.insert(key.1, vol);
+                self.volumes.insert(key.1, (vol, 1));
             }
         };
         self.vol += vol;
@@ -78,8 +81,9 @@ impl OrderBookSide {
     fn remove_order(&mut self, key: OrderKey, vol: Vol) {
         self.orders.remove(&(key.1, key.2));
         let vol_at_price = self.volumes.get_mut(&key.1).unwrap();
-        *vol_at_price -= vol;
-        if *vol_at_price == 0 {
+        vol_at_price.0 -= vol;
+        vol_at_price.1 -= 1;
+        if vol_at_price.1 == 0 {
             self.volumes.remove(&key.1);
         }
         self.vol -= vol;
@@ -93,7 +97,7 @@ impl OrderBookSide {
     /// - `vol` - Volume to remove
     ///
     fn remove_vol(&mut self, price: Price, vol: Vol) {
-        *self.volumes.get_mut(&price).unwrap() -= vol;
+        self.volumes.get_mut(&price).unwrap().0 -= vol;
         self.vol -= vol;
     }
 
@@ -106,9 +110,17 @@ impl OrderBookSide {
     }
 
     /// Get the volume at the best price of this side
-    fn best_vol(&self) -> Vol {
+    fn best_vol_and_orders(&self) -> (Vol, u32) {
         match self.volumes.first_key_value() {
             Some((_, v)) => *v,
+            None => (0, 0),
+        }
+    }
+
+    /// Get the volume at the best price of this side
+    fn best_vol(&self) -> Vol {
+        match self.volumes.first_key_value() {
+            Some((_, v)) => v.0,
             None => 0,
         }
     }
@@ -174,6 +186,11 @@ impl SideFunctionality for BidSide {
         Price::MAX - self.0.best_price()
     }
 
+    /// Get the volume at the best price of this side
+    fn best_vol_and_orders(&self) -> (Vol, u32) {
+        self.0.best_vol_and_orders()
+    }
+
     /// Get the best bid volume
     fn best_vol(&self) -> Vol {
         self.0.best_vol()
@@ -232,6 +249,11 @@ impl SideFunctionality for AskSide {
     /// Get best ask price
     fn best_price(&self) -> Price {
         self.0.best_price()
+    }
+
+    /// Get the volume at the best price of this side
+    fn best_vol_and_orders(&self) -> (Vol, u32) {
+        self.0.best_vol_and_orders()
     }
 
     /// Get best ask volume
@@ -293,6 +315,7 @@ mod tests {
 
         assert!(side.vol() == 0);
         assert!(side.best_vol() == 0);
+        assert!(side.best_vol_and_orders() == (0, 0));
         assert!(side.best_price() == 0);
         assert!(side.best_order_idx().is_none());
     }
@@ -305,6 +328,7 @@ mod tests {
 
         assert!(side.vol() == 10);
         assert!(side.best_vol() == 10);
+        assert!(side.best_vol_and_orders() == (10, 1));
         assert!(side.best_price() == 100);
         assert!(side.best_order_idx() == Some(1));
 
@@ -313,6 +337,7 @@ mod tests {
 
         assert!(side.vol() == 21);
         assert!(side.best_vol() == 21);
+        assert!(side.best_vol_and_orders() == (21, 2));
         assert!(side.best_price() == 100);
         assert!(side.best_order_idx() == Some(1));
 
@@ -321,6 +346,7 @@ mod tests {
 
         assert!(side.vol() == 33);
         assert!(side.best_vol() == 21);
+        assert!(side.best_vol_and_orders() == (21, 2));
         assert!(side.best_price() == 100);
         assert!(side.best_order_idx() == Some(1));
 
@@ -329,6 +355,7 @@ mod tests {
 
         assert!(side.vol() == 35);
         assert!(side.best_vol() == 2);
+        assert!(side.best_vol_and_orders() == (2, 1));
         assert!(side.best_price() == 99);
         assert!(side.best_order_idx() == Some(4));
 
@@ -365,18 +392,35 @@ mod tests {
 
         assert!(side.best_price() == 99);
         assert!(side.vol() == 20);
+        assert!(side.best_vol_and_orders() == (10, 1));
         assert!(side.best_order_idx() == Some(2));
 
         side.remove_order(get_ask_key(1, 99), 10);
 
         assert!(side.best_price() == 100);
         assert!(side.vol() == 10);
+        assert!(side.best_vol_and_orders() == (10, 1));
+        assert!(side.best_order_idx() == Some(1));
+
+        side.insert_order(get_ask_key(3, 100), 3, 15);
+
+        assert!(side.best_price() == 100);
+        assert!(side.vol() == 25);
+        assert!(side.best_vol_and_orders() == (25, 2));
+        assert!(side.best_order_idx() == Some(1));
+
+        side.remove_order(get_ask_key(3, 100), 15);
+
+        assert!(side.best_price() == 100);
+        assert!(side.vol() == 10);
+        assert!(side.best_vol_and_orders() == (10, 1));
         assert!(side.best_order_idx() == Some(1));
 
         side.remove_order(get_ask_key(0, 100), 10);
 
         assert!(side.best_price() == Price::MAX);
         assert!(side.vol() == 0);
+        assert!(side.best_vol_and_orders() == (0, 0));
         assert!(side.best_order_idx() == None);
     }
 
@@ -389,6 +433,7 @@ mod tests {
         side.remove_vol(100, 5);
 
         assert!(side.best_vol() == 5);
+        assert!(side.best_vol_and_orders() == (5, 1));
         assert!(side.vol() == 5);
     }
 }
