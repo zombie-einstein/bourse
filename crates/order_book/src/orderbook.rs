@@ -20,7 +20,9 @@ use std::cmp::min;
 use crate::types::Status;
 
 use super::side::{get_ask_key, get_bid_key, AskSide, BidSide, SideFunctionality};
-use super::types::{Event, Nanos, Order, OrderId, OrderKey, Price, Side, Trade, TraderId, Vol};
+use super::types::{
+    Event, Nanos, Order, OrderCount, OrderId, OrderKey, Price, Side, Trade, TraderId, Vol,
+};
 
 /// Order data combined with key
 ///
@@ -120,7 +122,7 @@ impl OrderBook {
 
     /// Disable trade execution
     ///
-    /// > **_NOTE:_** There is not currently
+    /// > **_NOTE:_** Currently there is not
     ///   a un-crossing algorithm implemented
     pub fn disable_trading(&mut self) {
         self.trading = false;
@@ -146,6 +148,11 @@ impl OrderBook {
         self.ask_side.best_vol()
     }
 
+    /// Get the current touch ask volume and order count
+    pub fn ask_best_vol_and_orders(&self) -> (Vol, OrderCount) {
+        self.ask_side.best_vol_and_orders()
+    }
+
     /// Get the current total bid volume
     pub fn bid_vol(&self) -> Vol {
         self.bid_side.vol()
@@ -154,6 +161,11 @@ impl OrderBook {
     /// Get current touch bid volume
     pub fn bid_best_vol(&self) -> Vol {
         self.bid_side.best_vol()
+    }
+
+    /// Get the current touch bid volume and order count
+    pub fn bid_best_vol_and_orders(&self) -> (Vol, OrderCount) {
+        self.bid_side.best_vol_and_orders()
     }
 
     /// Get current bid-ask price
@@ -643,7 +655,9 @@ mod tests {
         assert!(book.bid_vol() == 0);
         assert!(book.ask_vol() == 0);
         assert!(book.bid_best_vol() == 0);
-        assert!(book.ask_best_vol() == 0);
+        assert!(book.bid_best_vol_and_orders() == (0, 0));
+        assert!(book.bid_best_vol() == 0);
+        assert!(book.ask_best_vol_and_orders() == (0, 0));
         assert!(book.bid_ask() == (0, Price::MAX))
     }
 
@@ -661,7 +675,9 @@ mod tests {
         assert!(book.ask_vol() == 10);
         assert!(book.bid_vol() == 10);
         assert!(book.bid_best_vol() == 10);
+        assert!(book.bid_best_vol_and_orders() == (10, 1));
         assert!(book.ask_best_vol() == 10);
+        assert!(book.ask_best_vol_and_orders() == (10, 1));
 
         book.create_order(Side::Ask, 10, 0, Some(90));
         book.create_order(Side::Bid, 10, 0, Some(60));
@@ -673,7 +689,9 @@ mod tests {
         assert!(book.ask_vol() == 20);
         assert!(book.bid_vol() == 20);
         assert!(book.bid_best_vol() == 10);
+        assert!(book.bid_best_vol_and_orders() == (10, 1));
         assert!(book.ask_best_vol() == 10);
+        assert!(book.ask_best_vol_and_orders() == (10, 1));
 
         book.create_order(Side::Ask, 10, 0, Some(110));
         book.create_order(Side::Bid, 10, 0, Some(40));
@@ -685,7 +703,9 @@ mod tests {
         assert!(book.ask_vol() == 30);
         assert!(book.bid_vol() == 30);
         assert!(book.bid_best_vol() == 10);
+        assert!(book.bid_best_vol_and_orders() == (10, 1));
         assert!(book.ask_best_vol() == 10);
+        assert!(book.ask_best_vol_and_orders() == (10, 1));
     }
 
     #[test]
@@ -707,6 +727,8 @@ mod tests {
         assert!(book.bid_vol() == 20);
         assert!(book.bid_best_vol() == 10);
         assert!(book.ask_best_vol() == 10);
+        assert!(book.bid_best_vol_and_orders() == (10, 1));
+        assert!(book.ask_best_vol_and_orders() == (10, 1));
 
         book.cancel_order(0);
         book.cancel_order(3);
@@ -716,6 +738,8 @@ mod tests {
         assert!(book.bid_vol() == 10);
         assert!(book.bid_best_vol() == 10);
         assert!(book.ask_best_vol() == 10);
+        assert!(book.bid_best_vol_and_orders() == (10, 1));
+        assert!(book.ask_best_vol_and_orders() == (10, 1));
 
         book.cancel_order(1);
         book.cancel_order(2);
@@ -725,6 +749,8 @@ mod tests {
         assert!(book.bid_vol() == 0);
         assert!(book.bid_best_vol() == 0);
         assert!(book.ask_best_vol() == 0);
+        assert!(book.bid_best_vol_and_orders() == (0, 0));
+        assert!(book.ask_best_vol_and_orders() == (0, 0));
 
         matches!(book.orders[0].order.status, Status::Cancelled);
         matches!(book.orders[1].order.status, Status::Cancelled);
@@ -747,8 +773,10 @@ mod tests {
 
         assert!(book.ask_vol() == 8);
         assert!(book.ask_best_vol() == 8);
+        assert!(book.ask_best_vol_and_orders() == (8, 1));
         assert!(book.bid_vol() == 5);
         assert!(book.bid_best_vol() == 5);
+        assert!(book.bid_best_vol_and_orders() == (5, 1));
 
         assert!(book.orders[0].order.vol == 8);
         assert!(book.orders[1].order.vol == 5);
@@ -792,8 +820,10 @@ mod tests {
 
         assert!(book.ask_vol() == 0);
         assert!(book.ask_best_vol() == 0);
+        assert!(book.ask_best_vol_and_orders() == (0, 0));
         assert!(book.bid_vol() == 10);
         assert!(book.bid_best_vol() == 10);
+        assert!(book.bid_best_vol_and_orders() == (10, 1));
         assert!(book.bid_ask() == (100, Price::MAX));
 
         assert!(book.trades.len() == 1);
@@ -837,6 +867,8 @@ mod tests {
 
         assert!(book.bid_vol() == 202);
         assert!(book.ask_vol() == 102);
+        assert!(book.bid_best_vol_and_orders() == (202, 1));
+        assert!(book.ask_best_vol_and_orders() == (2, 1));
         assert!(book.bid_ask() == (12, 14));
 
         assert!(book.trades.len() == 3);
@@ -846,7 +878,7 @@ mod tests {
     }
 
     #[test]
-    fn test_market_no_trading() {
+    fn test_market_order_no_trading() {
         let mut book = OrderBook::new(0, false);
 
         book.create_order(Side::Bid, 101, 101, None);

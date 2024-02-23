@@ -9,6 +9,8 @@ def test_order_book_init():
     assert ob.ask_vol() == 0
     assert ob.best_bid_vol() == 0
     assert ob.best_ask_vol() == 0
+    assert ob.best_bid_vol_and_orders() == (0, 0)
+    assert ob.best_ask_vol_and_orders() == (0, 0)
 
 
 def test_place_order():
@@ -22,6 +24,8 @@ def test_place_order():
     assert ob.ask_vol() == 20
     assert ob.best_bid_vol() == 10
     assert ob.best_ask_vol() == 20
+    assert ob.best_bid_vol_and_orders() == (10, 1)
+    assert ob.best_ask_vol_and_orders() == (20, 1)
 
     ob.place_order(True, 10, 11, price=55)
     ob.place_order(False, 20, 12, price=65)
@@ -31,6 +35,8 @@ def test_place_order():
     assert ob.ask_vol() == 40
     assert ob.best_bid_vol() == 10
     assert ob.best_ask_vol() == 20
+    assert ob.best_bid_vol_and_orders() == (10, 1)
+    assert ob.best_ask_vol_and_orders() == (20, 1)
 
 
 def test_cancel_order():
@@ -52,6 +58,8 @@ def test_cancel_order():
     assert ob.ask_vol() == 20
     assert ob.best_bid_vol() == 10
     assert ob.best_ask_vol() == 20
+    assert ob.best_bid_vol_and_orders() == (10, 1)
+    assert ob.best_ask_vol_and_orders() == (20, 1)
 
     ob.cancel_order(id_0)
     ob.cancel_order(id_1)
@@ -64,6 +72,8 @@ def test_cancel_order():
     assert ob.ask_vol() == 0
     assert ob.best_bid_vol() == 0
     assert ob.best_ask_vol() == 0
+    assert ob.best_bid_vol_and_orders() == (0, 0)
+    assert ob.best_ask_vol_and_orders() == (0, 0)
 
 
 def test_trades():
@@ -85,6 +95,8 @@ def test_trades():
     assert ob.bid_ask() == (55, 65)
     assert ob.bid_vol() == 20
     assert ob.ask_vol() == 10
+    assert ob.best_bid_vol_and_orders() == (10, 1)
+    assert ob.best_ask_vol_and_orders() == (10, 1)
 
     ob.set_time(20)
 
@@ -97,6 +109,8 @@ def test_trades():
     assert ob.bid_ask() == (50, 55)
     assert ob.bid_vol() == 10
     assert ob.ask_vol() == 20
+    assert ob.best_bid_vol_and_orders() == (10, 1)
+    assert ob.best_ask_vol_and_orders() == (10, 1)
 
     trades = ob.get_trades()
     trade_df = bourse.data_processing.trades_to_dataframe(trades)

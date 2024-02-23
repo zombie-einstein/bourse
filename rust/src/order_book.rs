@@ -1,5 +1,5 @@
 use super::types;
-use bourse_book::types::{Nanos, OrderId, Price, Side, TraderId, Vol};
+use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_book::OrderBook as BaseOrderBook;
 use pyo3::prelude::*;
 
@@ -106,8 +106,21 @@ impl OrderBook {
     /// int
     ///     Touch volume on the ask side
     ///
-    pub fn best_ask_vol(&mut self) -> Vol {
+    pub fn best_ask_vol(&self) -> Vol {
         self.0.ask_best_vol()
+    }
+
+    /// best_ask_vol_and_orders() -> (int, int)
+    ///
+    /// Get the current ask side touch volume and order count
+    ///
+    /// Returns
+    /// -------
+    /// tuple[int, int]
+    ///     Touch volume and number of orders on the ask side
+    ///
+    pub fn best_ask_vol_and_orders(&self) -> (Vol, OrderCount) {
+        self.0.ask_best_vol_and_orders()
     }
 
     /// bid_vol() -> int
@@ -132,8 +145,21 @@ impl OrderBook {
     /// int
     ///     Touch volume on the bid side
     ///
-    pub fn best_bid_vol(&mut self) -> Vol {
+    pub fn best_bid_vol(&self) -> Vol {
         self.0.bid_best_vol()
+    }
+
+    /// best_bid_vol_and_orders() -> (int, int)
+    ///
+    /// Get the current bid side touch volume and order count
+    ///
+    /// Returns
+    /// -------
+    /// tuple[int, int]
+    ///     Touch volume and number of orders on the bid side
+    ///
+    pub fn best_bid_vol_and_orders(&self) -> (Vol, OrderCount) {
+        self.0.bid_best_vol_and_orders()
     }
 
     /// bid_ask() -> tuple[int, int]
@@ -145,7 +171,7 @@ impl OrderBook {
     /// tuple
     ///     Tuple containing the current bid and
     ///     ask prices
-    pub fn bid_ask(&mut self) -> (Price, Price) {
+    pub fn bid_ask(&self) -> (Price, Price) {
         self.0.bid_ask()
     }
 

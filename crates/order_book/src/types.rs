@@ -12,6 +12,8 @@ pub type Price = u32;
 pub type Vol = u32;
 /// Id of an agent/trader
 pub type TraderId = u32;
+/// Count of orders
+pub type OrderCount = u32;
 
 /// Market side
 #[derive(Clone, Copy, Debug)]

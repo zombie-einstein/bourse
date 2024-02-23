@@ -4,7 +4,9 @@
 //! functionality to process instructions
 //! submitted by agents and to track market data
 //!
-use bourse_book::types::{Event, Nanos, Order, OrderId, Price, Side, Trade, TraderId, Vol};
+use bourse_book::types::{
+    Event, Nanos, Order, OrderCount, OrderId, Price, Side, Trade, TraderId, Vol,
+};
 use bourse_book::OrderBook;
 use fastrand::Rng;
 use std::mem;
@@ -47,6 +49,8 @@ pub struct Env {
     prices: (Vec<Price>, Vec<Price>),
     /// Bid-ask volume histories
     volumes: (Vec<Vol>, Vec<Vol>),
+    /// Number of touch order histories
+    touch_order_counts: (Vec<OrderCount>, Vec<OrderCount>),
     /// Bid-ask touch volume histories
     touch_volumes: (Vec<Vol>, Vec<Vol>),
     /// Per step trade volume histories
@@ -71,6 +75,7 @@ impl Env {
             order_book: OrderBook::new(start_time, trading),
             prices: (Vec::new(), Vec::new()),
             volumes: (Vec::new(), Vec::new()),
+            touch_order_counts: (Vec::new(), Vec::new()),
             touch_volumes: (Vec::new(), Vec::new()),
             trade_vols: Vec::new(),
             transactions: Vec::new(),
@@ -116,8 +121,15 @@ impl Env {
         self.prices.1.push(bid_ask.1);
         self.volumes.0.push(self.order_book.bid_vol());
         self.volumes.1.push(self.order_book.ask_vol());
-        self.touch_volumes.0.push(self.order_book.bid_best_vol());
-        self.touch_volumes.1.push(self.order_book.ask_best_vol());
+
+        let (bid_touch_vol, bid_touch_order_count) = self.order_book.bid_best_vol_and_orders();
+        self.touch_volumes.0.push(bid_touch_vol);
+        self.touch_order_counts.0.push(bid_touch_order_count);
+
+        let (ask_touch_vol, ask_touch_order_count) = self.order_book.ask_best_vol_and_orders();
+        self.touch_volumes.1.push(ask_touch_vol);
+        self.touch_order_counts.1.push(ask_touch_order_count);
+
         self.trade_vols.push(self.order_book.get_trade_vol());
     }
 
@@ -220,6 +232,11 @@ impl Env {
         &self.touch_volumes
     }
 
+    /// Get bid-ask order_count histories
+    pub fn get_touch_order_counts(&self) -> &(Vec<OrderCount>, Vec<OrderCount>) {
+        &self.touch_order_counts
+    }
+
     /// Get per step trade volume histories
     pub fn get_trade_vols(&self) -> &Vec<Vol> {
         &self.trade_vols
@@ -297,6 +314,10 @@ mod tests {
         let touch_volumes = env.get_touch_volumes();
         assert!(touch_volumes.0 == vec![10, 10, 10]);
         assert!(touch_volumes.1 == vec![20, 20, 10]);
+
+        let touch_order_counts = env.get_touch_order_counts();
+        assert!(touch_order_counts.0 == vec![1, 1, 1]);
+        assert!(touch_order_counts.1 == vec![1, 1, 1]);
 
         let trade_vols = env.get_trade_vols();
         assert!(*trade_vols == vec![0, 0, 30]);

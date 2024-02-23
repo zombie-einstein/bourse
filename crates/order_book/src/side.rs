@@ -5,7 +5,7 @@
 //!
 use std::collections::BTreeMap;
 
-use super::types::{Nanos, OrderId, OrderKey, Price, Side, Vol};
+use super::types::{Nanos, OrderCount, OrderId, OrderKey, Price, Side, Vol};
 
 /// Common side side functionality
 pub trait SideFunctionality {
@@ -22,7 +22,7 @@ pub trait SideFunctionality {
     /// Get volume at best price
     fn best_vol(&self) -> Vol;
     /// Get the volume and number at the best_price
-    fn best_vol_and_orders(&self) -> (Vol, u32);
+    fn best_vol_and_orders(&self) -> (Vol, OrderCount);
     /// Get total volume
     fn vol(&self) -> Vol;
     /// Get the id of the highest priority order
@@ -110,7 +110,7 @@ impl OrderBookSide {
     }
 
     /// Get the volume at the best price of this side
-    fn best_vol_and_orders(&self) -> (Vol, u32) {
+    fn best_vol_and_orders(&self) -> (Vol, OrderCount) {
         match self.volumes.first_key_value() {
             Some((_, v)) => *v,
             None => (0, 0),
@@ -187,7 +187,7 @@ impl SideFunctionality for BidSide {
     }
 
     /// Get the volume at the best price of this side
-    fn best_vol_and_orders(&self) -> (Vol, u32) {
+    fn best_vol_and_orders(&self) -> (Vol, OrderCount) {
         self.0.best_vol_and_orders()
     }
 
@@ -252,7 +252,7 @@ impl SideFunctionality for AskSide {
     }
 
     /// Get the volume at the best price of this side
-    fn best_vol_and_orders(&self) -> (Vol, u32) {
+    fn best_vol_and_orders(&self) -> (Vol, OrderCount) {
         self.0.best_vol_and_orders()
     }
 
