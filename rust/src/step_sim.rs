@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::types::{cast_order, cast_trade, PyOrder, PyTrade};
-use bourse_book::types::{Nanos, OrderId, Price, Side, TraderId, Vol};
+use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_de::Env as BaseEnv;
 use fastrand::Rng;
 use numpy::{PyArray1, ToPyArray};
@@ -82,6 +82,12 @@ impl StepEnv {
         self.env.get_orderbook().ask_best_vol()
     }
 
+    /// tuple[int, int]: Current ask touch volume and order count
+    #[getter]
+    pub fn best_ask_vol_and_orders(&self) -> (Vol, OrderCount) {
+        self.env.get_orderbook().ask_best_vol_and_orders()
+    }
+
     /// int: Current total bid side volume
     #[getter]
     pub fn bid_vol(&self) -> Vol {
@@ -98,6 +104,12 @@ impl StepEnv {
     #[getter]
     pub fn best_bid_vol(&mut self) -> Vol {
         self.env.get_orderbook().bid_best_vol()
+    }
+
+    /// tuple[int, int]: Current bid touch volume and order count
+    #[getter]
+    pub fn best_bid_vol_and_orders(&self) -> (Vol, OrderCount) {
+        self.env.get_orderbook().bid_best_vol_and_orders()
     }
 
     /// tuple[int, int]: Current bid-ask prices
@@ -275,6 +287,26 @@ impl StepEnv {
         )
     }
 
+    /// get_touch_order_counts() -> tuple[numpy.ndarray, numpy.ndarray]
+    ///
+    /// Get touch volume histories
+    ///
+    /// Returns
+    /// -------
+    /// tuple[np.array, np.array]
+    ///     Tuple containing histories of bid and ask touch volumes.
+    ///
+    pub fn get_touch_order_counts<'a>(
+        &self,
+        py: Python<'a>,
+    ) -> (&'a PyArray1<OrderCount>, &'a PyArray1<OrderCount>) {
+        let touch_order_counts = self.env.get_touch_order_counts();
+        (
+            touch_order_counts.0.to_pyarray(py),
+            touch_order_counts.1.to_pyarray(py),
+        )
+    }
+
     /// get_trade_volumes() -> numpy.ndarray
     ///
     /// Get trade volume history
@@ -365,6 +397,7 @@ impl StepEnv {
         let volumes = self.get_volumes(py);
         let trade_volumes = self.get_trade_volumes(py);
         let touch_volumes = self.get_touch_volumes(py);
+        let touch_order_counts = self.get_touch_order_counts(py);
 
         HashMap::from([
             ("bid_price", prices.0),
@@ -373,6 +406,8 @@ impl StepEnv {
             ("ask_vol", volumes.1),
             ("bid_touch_vol", touch_volumes.0),
             ("ask_touch_vol", touch_volumes.1),
+            ("bid_touch_order_count", touch_order_counts.0),
+            ("ask_touch_order_count", touch_order_counts.1),
             ("trade_vol", trade_volumes),
         ])
     }

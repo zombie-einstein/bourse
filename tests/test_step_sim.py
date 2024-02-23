@@ -59,6 +59,13 @@ def test_step_sim_env():
     assert np.array_equal(bid_touch_vols, np.array([100, 100, 100, 100]))
     assert np.array_equal(ask_touch_vols, np.array([100, 100, 50, 50]))
 
+    bid_touch_counts, ask_touch_counts = env.get_touch_order_counts()
+    assert isinstance(bid_touch_counts, np.ndarray)
+    assert isinstance(ask_touch_counts, np.ndarray)
+
+    assert np.array_equal(bid_touch_counts, np.array([1, 1, 1, 1]))
+    assert np.array_equal(ask_touch_counts, np.array([1, 1, 1, 1]))
+
     trade_vols = env.get_trade_volumes()
 
     assert isinstance(trade_vols, np.ndarray)
@@ -75,6 +82,8 @@ def test_step_sim_env():
         "ask_vol",
         "bid_touch_vol",
         "ask_touch_vol",
+        "bid_touch_order_count",
+        "ask_touch_order_count",
         "trade_vol",
     }
 
@@ -88,6 +97,9 @@ def test_step_sim_env():
 
     assert np.array_equal(core_data["bid_touch_vol"], np.array([100, 100, 100, 100]))
     assert np.array_equal(core_data["ask_touch_vol"], np.array([100, 100, 50, 50]))
+
+    assert np.array_equal(core_data["bid_touch_order_count"], np.array([1, 1, 1, 1]))
+    assert np.array_equal(core_data["ask_touch_order_count"], np.array([1, 1, 1, 1]))
 
     assert np.array_equal(core_data["trade_vol"], np.array([0, 0, 150, 0]))
 

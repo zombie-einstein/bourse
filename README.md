@@ -27,7 +27,7 @@ for an annotated example.
 
 The library consists of two core crates:
 
-- `bourse-book` a library implementing a market order
+- `bourse-book` a library implementing a limit order
   book. Full documentation can be found
   [here](https://docs.rs/bourse-book/latest/bourse_book/).
 
