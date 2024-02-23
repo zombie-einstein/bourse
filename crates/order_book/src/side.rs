@@ -34,7 +34,7 @@ pub struct OrderBookSide {
     /// Total volume
     vol: Vol,
     /// Volume at price levels
-    volumes: BTreeMap<Price, (Vol, u32)>,
+    volumes: BTreeMap<Price, (Vol, OrderCount)>,
     /// Order map and price-time priority queue
     orders: BTreeMap<(Price, Nanos), OrderId>,
 }
