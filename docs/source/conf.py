@@ -29,7 +29,7 @@ napoleon_use_rtype = False
 napoleon_preprocess_types = True
 napoleon_attr_annotations = True
 
-add_module_names = False
+add_module_names = True
 
 exclude_patterns = []
 
@@ -59,12 +59,20 @@ python_apigen_order_tiebreaker = "alphabetical"
 python_apigen_modules = {
     "bourse.data_processing": "pages/generated/data_processing/",
     "bourse.step_sim": "pages/generated/step_sim/",
+    "bourse.step_sim.agents.base_agent": "pages/generated/step_sim/agents/base",
+    "bourse.step_sim.agents.random_agent": "pages/generated/step_sim/agents/random",
     "bourse.core": "pages/generated/core/",
 }
 
 python_apigen_default_groups = [
     (r".*data_processing.*", "data_processing"),
     (r".*step_sim.*", "step_sim"),
+    (r"class:.*BaseAgent.*", "base_agent_class"),
+    (r"method:.*BaseAgent.*", "BaseAgent Methods"),
+    (r"attribute:.*BaseAgent.*", "BaseAgent Attributes"),
+    (r"class:.*RandomAgent.*", "random_agent_class"),
+    (r"method:.*RandomAgent.*", "RandomAgent Methods"),
+    (r"attribute:.*RandomAgent.*", "RandomAgent Attributes"),
     (r"class:.*OrderBook.*", "order_book_class"),
     (r"method:.*OrderBook.*", "OrderBook Methods"),
     (r"attribute:.*OrderBook.*", "OrderBook Attributes"),

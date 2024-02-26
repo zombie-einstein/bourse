@@ -22,7 +22,7 @@ then define an agent class
            self.order_id = None
 
        def update(self, rng, env):
-           # Place an order if not one live
+           # Place an order if one is not live
            if self.order_id is None:
                price = rng.integers(*self.price_range)
                side = bool(rng.choice([True, False]))

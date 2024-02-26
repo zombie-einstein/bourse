@@ -5,7 +5,7 @@
 //! submitted by agents and to track market data
 //!
 use bourse_book::types::{
-    Event, Nanos, Order, OrderCount, OrderId, Price, Side, Trade, TraderId, Vol,
+    Event, Nanos, Order, OrderCount, OrderId, Price, Side, Status, Trade, TraderId, Vol,
 };
 use bourse_book::OrderBook;
 use fastrand::Rng;
@@ -255,6 +255,31 @@ impl Env {
     /// Get reference to trade data
     pub fn get_trades(&self) -> &Vec<Trade> {
         self.order_book.get_trades()
+    }
+
+    /// Get a reference to an order by id
+    ///
+    /// # Arguments
+    ///
+    /// - `order_id` - Id of an order
+    ///
+    pub fn order(&self, order_id: OrderId) -> &Order {
+        self.order_book.order(order_id)
+    }
+
+    /// Get the status of an order
+    ///
+    /// # Arguments
+    ///
+    /// - `order_id` - Id of an order
+    ///
+    pub fn order_status(&self, order_id: OrderId) -> Status {
+        self.order_book.order(order_id).status
+    }
+
+    #[cfg(test)]
+    pub fn get_transactions(&self) -> &Vec<Event> {
+        &self.transactions
     }
 }
 
