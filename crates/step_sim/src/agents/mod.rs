@@ -1,4 +1,4 @@
-//! Agent traits for agents to be included in a simulation
+//! Simulation agent traits and common implementations
 //!
 //! The simulation agents must implement an `update` function
 //! that is called each step of the simulation.
@@ -7,15 +7,17 @@ use super::env::Env;
 use fastrand::Rng;
 mod momentum_agent;
 mod noise_agent;
+mod random_agent;
 
 pub use bourse_macros::Agents;
 pub use momentum_agent::MomentumAgent;
 pub use noise_agent::NoiseAgent;
+pub use random_agent::RandomAgents;
 
 /// Homogeneous agent set functionality
 ///
 /// A set of agents that implement this trait
-/// can then be included in a stuct using the
+/// can then be included in a struct using the
 /// [Agents] macro to combine multiple agent
 /// types.
 ///
