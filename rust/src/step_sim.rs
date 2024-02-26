@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::types::{cast_order, cast_trade, PyOrder, PyTrade};
+use super::types::{cast_order, cast_trade, PyOrder, PyTrade, status_to_int};
 use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_de::Env as BaseEnv;
 use fastrand::Rng;
@@ -116,6 +116,34 @@ impl StepEnv {
     #[getter]
     pub fn bid_ask(&mut self) -> (Price, Price) {
         self.env.get_orderbook().bid_ask()
+    }
+
+    /// order_status(order_id: int) -> int
+    ///
+    /// Get the status of an order
+    ///
+    /// Parameters
+    /// ----------
+    /// order_id: int
+    ///     Id of the order to query.
+    ///
+    /// Returns
+    /// -------
+    /// int
+    ///     Status of the order as an integer where:
+    ///
+    ///     - ``0 = New`` Order has not been placed
+    ///       on the market
+    ///     - ``1 = Active`` Order is on the market
+    ///     - ``2 = Filled`` Order has been filled
+    ///     - ``3 = Cancelled`` Order has been
+    ///       cancelled
+    ///     - ``4 = Rejected`` Order has been
+    ///       rejected (e.g. a market order in a
+    ///       no-trade period)
+    ///
+    pub fn order_status(&self, order_id: OrderId) -> u8 {
+        status_to_int(&self.env.get_orderbook().order(order_id).status)
     }
 
     /// Enable trading
