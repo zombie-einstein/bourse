@@ -39,38 +39,34 @@ use crate::Env;
 /// let mut env = Env::new(0, 1_000_000, true);
 ///
 /// let mut agents = SimAgents {
-///     a: RandomAgents::new(10, (40, 60), (10, 20), 0.8),
+///     a: RandomAgents::new(10, (40, 60), (10, 20), 2, 0.8),
 /// };
 ///
 /// sim_runner(&mut env, &mut agents, 101, 10);
 /// ```
 pub struct RandomAgents {
     orders: Vec<Option<OrderId>>,
-    price_range: (Price, Price),
+    tick_range: (Price, Price),
     vol_range: (Vol, Vol),
+    tick_size: Price,
     activity_rate: f32,
 }
 
 impl RandomAgents {
     pub fn new(
         n_agents: usize,
-        price_range: (Price, Price),
+        tick_range: (Price, Price),
         vol_range: (Vol, Vol),
+        tick_size: Price,
         activity_rate: f32,
     ) -> Self {
         Self {
             orders: vec![None; n_agents],
-            price_range,
+            tick_range,
             vol_range,
+            tick_size,
             activity_rate,
         }
-    }
-
-    pub fn sample_order(&mut self, rng: &mut fastrand::Rng) -> (Side, Price, Vol) {
-        let side = rng.choice([Side::Ask, Side::Bid]).unwrap();
-        let price = rng.u32(self.price_range.0..self.price_range.1);
-        let vol = rng.u32(self.vol_range.0..self.vol_range.1);
-        (side, price, vol)
     }
 }
 
@@ -90,13 +86,13 @@ impl Agent for RandomAgents {
                             None
                         } else {
                             let side = rng.choice([Side::Ask, Side::Bid]).unwrap();
-                            let price = rng.u32(self.price_range.0..self.price_range.1);
+                            let tick = rng.u32(self.tick_range.0..self.tick_range.1);
                             let vol = rng.u32(self.vol_range.0..self.vol_range.1);
                             Some(env.place_order(
                                 side,
                                 vol,
                                 TraderId::try_from(n).unwrap(),
-                                Some(price),
+                                Some(tick * self.tick_size),
                             ))
                         }
                     }
@@ -120,7 +116,7 @@ mod tests {
         let mut env = Env::new(0, 1000, true);
         let mut rng = Rng::with_seed(101);
 
-        let mut agents = RandomAgents::new(2, (10, 20), (20, 30), 0.0);
+        let mut agents = RandomAgents::new(2, (10, 20), (20, 30), 1, 0.0);
 
         agents.update(&mut env, &mut rng);
         assert!(env.get_transactions().len() == 0);
@@ -135,7 +131,7 @@ mod tests {
         let mut env = Env::new(0, 1000, true);
         let mut rng = Rng::with_seed(101);
 
-        let mut agents = RandomAgents::new(1, (10, 20), (20, 30), 1.0);
+        let mut agents = RandomAgents::new(1, (10, 20), (20, 30), 1, 1.0);
 
         agents.update(&mut env, &mut rng);
         assert!(env.get_transactions().len() == 1);

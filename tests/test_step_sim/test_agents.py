@@ -6,7 +6,7 @@ import bourse
 def test_random_agent():
     env = bourse.core.StepEnv(101, 0, 100_000)
 
-    agent = bourse.step_sim.agents.RandomAgent(0, 1.0, (10, 20), (20, 30))
+    agent = bourse.step_sim.agents.RandomAgent(0, 1.0, (10, 20), (20, 30), 2)
 
     rng = np.random.default_rng(101)
 

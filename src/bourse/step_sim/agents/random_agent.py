@@ -28,8 +28,9 @@ class RandomAgent(BaseAgent):
         self,
         i: int,
         activity_rate: float,
-        price_range: typing.Tuple[int, int],
+        tick_range: typing.Tuple[int, int],
         vol_range: typing.Tuple[int, int],
+        tick_size: int,
     ):
         """
         Initialise a RandomAgent
@@ -41,15 +42,18 @@ class RandomAgent(BaseAgent):
         activity_rate: float
             Activity rate of the agent(i.e. the
             probability the agent is active each step).
-        price_range: tuple[int, int]
-            Price range to sample from.
+        tick_range: tuple[int, int]
+            Tick range to sample from.
         vol_range: tuple[int, int]
             Volume range to sample from.
+        tick_size: int
+            Size of a market tick
         """
         self.i = i
         self.activity_rate = activity_rate
-        self.price_range = price_range
+        self.tick_range = tick_range
         self.vol_range = vol_range
+        self.tick_size = tick_size
         self.order_id = None
 
     def update(self, rng: np.random.Generator, env: core.StepEnv):
@@ -79,7 +83,9 @@ class RandomAgent(BaseAgent):
                 self.order_id = None
             # Otherwise place a new random order
             else:
-                price = rng.integers(*self.price_range)
+                tick = rng.integers(*self.tick_range)
                 vol = rng.integers(*self.vol_range)
                 side = bool(rng.choice([True, False]))
-                self.order_id = env.place_order(side, vol, self.i, price=price)
+                self.order_id = env.place_order(
+                    side, vol, self.i, price=tick * self.tick_size
+                )
