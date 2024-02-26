@@ -5,7 +5,7 @@
 //! submitted by agents and to track market data
 //!
 use bourse_book::types::{
-    Event, Nanos, Order, OrderCount, OrderId, Price, Side, Status, Trade, TraderId, Vol
+    Event, Nanos, Order, OrderCount, OrderId, Price, Side, Status, Trade, TraderId, Vol,
 };
 use bourse_book::OrderBook;
 use fastrand::Rng;

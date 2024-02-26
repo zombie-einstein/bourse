@@ -65,6 +65,10 @@ def run(
         - ``ask_price``: Ask price at each step
         - ``bid_vol``: Total bid volume at each step
         - ``ask_vol``: Total ask volume at each step
+        - ``bid_touch_vol``: Bid touch volume at each step
+        - ``ask_touch_vol``: Ask touch volume at each step
+        - ``bid_touch_order_count``: Number of orders at the touch
+        - ``ask_touch_order_count``: Number of orders at the touch
         - ``trade_vol``: Trade volume each step
     """
 

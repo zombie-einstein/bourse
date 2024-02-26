@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::types::{cast_order, cast_trade, PyOrder, PyTrade, status_to_int};
+use super::types::{cast_order, cast_trade, status_to_int, PyOrder, PyTrade};
 use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_de::Env as BaseEnv;
 use fastrand::Rng;
@@ -412,13 +412,15 @@ impl StepEnv {
     /// dict[str, np.ndarray]
     ///     Dictionary containing level 1 data with keys:
     ///
-    ///         - ``bid_price``
-    ///         - ``ask_price``
-    ///         - ``bid_vol``
-    ///         - ``ask_vol``
-    ///         - ``bid_touch_vol``
-    ///         - ``ask_touch_vol``
-    ///         - ``trade_vol``
+    ///         - ``bid_price`` - Touch price
+    ///         - ``ask_price`` - Touch price
+    ///         - ``bid_vol`` - Total volume
+    ///         - ``ask_vol`` - Total volume
+    ///         - ``bid_touch_vol`` - Touch volume
+    ///         - ``ask_touch_vol`` - Touch volume
+    ///         - ``bid_touch_order_count`` - Number of orders at touch
+    ///         - ``ask_touch_order_count`` - Number of orders at touch
+    ///         - ``trade_vol`` - Total trade vol over a step
     ///
     pub fn get_market_data<'a>(&self, py: Python<'a>) -> HashMap<&str, &'a PyArray1<u32>> {
         let prices = self.get_prices(py);

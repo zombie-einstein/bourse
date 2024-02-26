@@ -1,5 +1,5 @@
 use super::Agent;
-use crate::types::{OrderId, Price, Side, TraderId, Vol, Status};
+use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
 use crate::Env;
 
 /// Agents that place orders with uniformly sampled parameters
@@ -116,7 +116,7 @@ mod tests {
     use fastrand::Rng;
 
     #[test]
-    fn test_activity_rate(){
+    fn test_activity_rate() {
         let mut env = Env::new(0, 1000, true);
         let mut rng = Rng::with_seed(101);
 
@@ -139,20 +139,20 @@ mod tests {
 
         agents.update(&mut env, &mut rng);
         assert!(env.get_transactions().len() == 1);
-        matches!(env.get_transactions()[0], Event::New{..});
+        matches!(env.get_transactions()[0], Event::New { .. });
         assert!(agents.orders == vec![Some(0)]);
 
         env.step(&mut rng);
 
         agents.update(&mut env, &mut rng);
         assert!(env.get_transactions().len() == 1);
-        matches!(env.get_transactions()[0], Event::Cancellation{..});
+        matches!(env.get_transactions()[0], Event::Cancellation { .. });
 
         env.step(&mut rng);
 
         agents.update(&mut env, &mut rng);
         assert!(env.get_transactions().len() == 1);
-        matches!(env.get_transactions()[0], Event::New{..});
+        matches!(env.get_transactions()[0], Event::New { .. });
         assert!(agents.orders == vec![Some(1)]);
     }
 }
