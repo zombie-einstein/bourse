@@ -8,6 +8,7 @@ use fastrand::Rng;
 mod momentum_agent;
 mod noise_agent;
 mod random_agent;
+mod stats;
 
 pub use bourse_macros::Agents;
 pub use momentum_agent::MomentumAgent;
