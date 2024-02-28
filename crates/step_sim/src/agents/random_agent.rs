@@ -3,7 +3,7 @@ use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
 use crate::Env;
 use rand::seq::SliceRandom;
 use rand::Rng;
-use rand_xoshiro::Xoroshiro128StarStar as RngGen;
+use rand::RngCore;
 
 /// Agents that place orders with uniformly sampled parameters
 ///
@@ -73,7 +73,7 @@ impl RandomAgents {
 }
 
 impl Agent for RandomAgents {
-    fn update(&mut self, env: &mut Env, rng: &mut RngGen) {
+    fn update<R: RngCore>(&mut self, env: &mut Env, rng: &mut R) {
         let new_orders: Vec<Option<OrderId>> = self
             .orders
             .iter_mut()
@@ -112,11 +112,12 @@ mod tests {
     use super::*;
     use bourse_book::types::Event;
     use rand::SeedableRng;
+    use rand_xoshiro::Xoroshiro128StarStar;
 
     #[test]
     fn test_activity_rate() {
         let mut env = Env::new(0, 1000, true);
-        let mut rng = RngGen::seed_from_u64(101);
+        let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let mut agents = RandomAgents::new(2, (10, 20), (20, 30), 1, 0.0);
 
@@ -131,7 +132,7 @@ mod tests {
     #[test]
     fn test_order_place_then_cancel() {
         let mut env = Env::new(0, 1000, true);
-        let mut rng = RngGen::seed_from_u64(101);
+        let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let mut agents = RandomAgents::new(1, (10, 20), (20, 30), 1, 1.0);
 

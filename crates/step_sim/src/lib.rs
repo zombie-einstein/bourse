@@ -17,7 +17,7 @@
 //! use bourse_book::types::{Price, Side, Vol};
 //! use bourse_de::agents::AgentSet;
 //! use bourse_de::{sim_runner, Env};
-//! use rand_xoshiro::Xoroshiro128StarStar as Rng;
+//! use rand::RngCore;
 //! use rand::seq::SliceRandom;
 //!
 //! struct Agents {
@@ -29,24 +29,21 @@
 //! impl AgentSet for Agents {
 //!     // Agents place an order on a random side
 //!     // a fixed distance above/below the mid
-//!     fn update(
-//!         &mut self, env: &mut Env, rng: &mut Rng
+//!     fn update<R: RngCore>(
+//!         &mut self, env: &mut Env, rng: &mut R
 //!     ) {
 //!         let (bid, ask) = env.get_orderbook().bid_ask();
 //!         let mid = (ask - bid) / 2;
 //!         let mid_price = bid + mid;
-//!         println!("{}", mid_price);
 //!         for _ in (0..self.n_agents) {
 //!             let side = [Side::Bid, Side::Ask].choose(rng).unwrap();
 //!             match side {
 //!                 Side::Ask => {
 //!                     let p = mid_price - self.offset;
-//!                     println!("==> {}", p);
 //!                     env.place_order(*side, self.vol, 101, Some(p));
 //!                 }
 //!                 Side::Bid => {
 //!                     let p = mid_price + self.offset;
-//!                     println!("==< {}", p);
 //!                     env.place_order(*side, self.vol, 101, Some(p));
 //!                 }
 //!             }

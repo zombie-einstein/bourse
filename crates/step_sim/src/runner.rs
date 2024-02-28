@@ -3,7 +3,7 @@ use super::agents::AgentSet;
 use super::env::Env;
 use kdam::tqdm;
 use rand_xoshiro::rand_core::SeedableRng;
-use rand_xoshiro::Xoroshiro128StarStar as Rng;
+use rand_xoshiro::Xoroshiro128StarStar;
 
 /// Run a simulation for a fixed number of steps
 ///
@@ -16,14 +16,14 @@ use rand_xoshiro::Xoroshiro128StarStar as Rng;
 /// ```
 /// use bourse_de::{Env, sim_runner};
 /// use bourse_de::agents::AgentSet;
-/// use rand_xoshiro::Xoroshiro128StarStar as Rng;
+/// use rand::RngCore;
 ///
 /// // Dummy agent-type
 /// struct Agents{}
 ///
 /// impl AgentSet for Agents {
-///     fn update(
-///         &mut self, env: &mut Env, _rng: &mut Rng
+///     fn update<R: RngCore>(
+///         &mut self, env: &mut Env, _rng: &mut R
 ///     ) {}
 /// }
 ///
@@ -42,7 +42,7 @@ use rand_xoshiro::Xoroshiro128StarStar as Rng;
 /// - `n_steps` - Number of simulation steps
 ///
 pub fn sim_runner<A: AgentSet>(env: &mut Env, agents: &mut A, seed: u64, n_steps: u64) {
-    let mut rng = Rng::seed_from_u64(seed);
+    let mut rng = Xoroshiro128StarStar::seed_from_u64(seed);
 
     for _ in tqdm!(0..n_steps) {
         agents.update(env, &mut rng);

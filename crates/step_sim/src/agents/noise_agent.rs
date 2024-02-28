@@ -5,8 +5,8 @@ use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
 use crate::Env;
 use rand::seq::SliceRandom;
 use rand::Rng;
+use rand::RngCore;
 use rand_distr::{Distribution, LogNormal};
-use rand_xoshiro::Xoroshiro128StarStar as RngGen;
 
 /// Agent(s) that randomly place and cancel limit and market orders
 ///
@@ -112,7 +112,7 @@ impl NoiseAgent {
 }
 
 impl Agent for NoiseAgent {
-    fn update(&mut self, env: &mut Env, rng: &mut RngGen) {
+    fn update<R: RngCore>(&mut self, env: &mut Env, rng: &mut R) {
         let live_orders = self
             .orders
             .iter()
@@ -165,6 +165,7 @@ impl Agent for NoiseAgent {
 mod tests {
     use bourse_book::types::Event;
     use rand::SeedableRng;
+    use rand_xoshiro::Xoroshiro128StarStar;
 
     use super::*;
 
@@ -178,7 +179,7 @@ mod tests {
     #[test]
     fn test_place_and_cancel_limit_orders() {
         let mut env = Env::new(0, 1_000_000, true);
-        let mut rng = RngGen::seed_from_u64(101);
+        let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let mut agents = NoiseAgent::new(10, 10, 1.0, 0.0, 1.0, 100, 2, 0.0, 10.0);
 
