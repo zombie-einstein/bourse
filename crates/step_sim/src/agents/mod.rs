@@ -4,7 +4,7 @@
 //! that is called each step of the simulation.
 //!
 use super::env::Env;
-use rand_xoshiro::Xoroshiro128StarStar as Rng;
+use rand::RngCore;
 mod momentum_agent;
 mod noise_agent;
 mod random_agent;
@@ -27,13 +27,13 @@ pub use random_agent::RandomAgents;
 /// ```
 /// use bourse_de::Env;
 /// use bourse_de::agents::{Agent, Agents, AgentSet};
-/// use rand_xoshiro::Xoroshiro128StarStar as Rng;
+/// use rand::RngCore;
 ///
 /// struct AgentType{}
 ///
 /// impl Agent for AgentType {
-///     fn update(
-///         &mut self, env: &mut Env, _rng: &mut Rng
+///     fn update<R: RngCore>(
+///         &mut self, env: &mut Env, _rng: &mut R
 ///     ) {}
 /// }
 ///
@@ -50,7 +50,7 @@ pub trait Agent {
     /// - `env` - Reference to a [Env] simulation environment
     /// - `rng` - Random generator
     ///
-    fn update(&mut self, env: &mut Env, rng: &mut Rng);
+    fn update<R: RngCore>(&mut self, env: &mut Env, rng: &mut R);
 }
 
 /// Functionality required for simulation agents
@@ -71,13 +71,13 @@ pub trait Agent {
 /// ```
 /// use bourse_de::Env;
 /// use bourse_de::agents::{Agent, Agents, AgentSet};
-/// use rand_xoshiro::Xoroshiro128StarStar as Rng;
+/// use rand::RngCore;
 ///
 /// struct AgentType{}
 ///
 /// impl Agent for AgentType {
-///     fn update(
-///         &mut self, env: &mut Env, _rng: &mut Rng
+///     fn update<R: RngCore>(
+///         &mut self, env: &mut Env, _rng: &mut R
 ///     ) {}
 /// }
 ///
@@ -93,11 +93,11 @@ pub trait Agent {
 /// ```
 /// # use bourse_de::Env;
 /// # use bourse_de::agents::{Agent, Agents, AgentSet};
-/// # use rand_xoshiro::Xoroshiro128StarStar as Rng;
+/// # use rand::RngCore;
 /// # struct AgentType{}
 /// # impl Agent for AgentType {
-/// #    fn update(
-/// #        &mut self, env: &mut Env, _rng: &mut Rng
+/// #    fn update<R: RngCore>(
+/// #        &mut self, env: &mut Env, _rng: &mut R
 /// #     ) {}
 /// # }
 /// struct MixedAgents {
@@ -106,7 +106,7 @@ pub trait Agent {
 /// }
 ///
 /// impl AgentSet for MixedAgents {
-///     fn update(&mut self, env: &mut Env, rng: &mut Rng){
+///     fn update<R: RngCore>(&mut self, env: &mut Env, rng: &mut R){
 ///         self.a.update(env, rng);
 ///         self.b.update(env, rng);
 ///     }
@@ -128,7 +128,7 @@ pub trait AgentSet {
     /// - `env` - Simulation environment
     /// - `rng` - Random generator
     ///
-    fn update(&mut self, env: &mut Env, rng: &mut Rng);
+    fn update<R: RngCore>(&mut self, env: &mut Env, rng: &mut R);
 }
 
 #[cfg(test)]
@@ -136,6 +136,7 @@ mod tests {
     use super::*;
     use bourse_book::types::{Price, Side};
     use rand_xoshiro::rand_core::SeedableRng;
+    use rand_xoshiro::Xoroshiro128StarStar;
 
     struct TestAgent {
         side: Side,
@@ -149,7 +150,7 @@ mod tests {
     }
 
     impl Agent for TestAgent {
-        fn update(&mut self, env: &mut Env, _rng: &mut Rng) {
+        fn update<R: RngCore>(&mut self, env: &mut Env, _rng: &mut R) {
             env.place_order(self.side, 10, 101, Some(self.price));
         }
     }
@@ -163,7 +164,7 @@ mod tests {
         }
 
         let mut env = Env::new(0, 1000, true);
-        let mut rng = Rng::seed_from_u64(101);
+        let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let mut test_agents = TestAgents {
             a: TestAgent::new(Side::Bid, 20),

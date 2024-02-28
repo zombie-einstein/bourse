@@ -5,7 +5,8 @@ use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol}
 use bourse_de::Env as BaseEnv;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::prelude::*;
-use rand_xoshiro::{rand_core::SeedableRng, Xoroshiro128StarStar as Rng};
+use rand_xoshiro::rand_core::SeedableRng;
+use rand_xoshiro::Xoroshiro128StarStar;
 
 /// Discrete event simulation environment
 ///
@@ -51,7 +52,7 @@ use rand_xoshiro::{rand_core::SeedableRng, Xoroshiro128StarStar as Rng};
 #[pyclass]
 pub struct StepEnv {
     env: BaseEnv,
-    rng: Rng,
+    rng: Xoroshiro128StarStar,
 }
 
 #[pymethods]
@@ -60,7 +61,7 @@ impl StepEnv {
     #[pyo3(signature = (seed, start_time, step_size, trading=true))]
     pub fn new(seed: u64, start_time: Nanos, step_size: Nanos, trading: bool) -> PyResult<Self> {
         let env = BaseEnv::new(start_time, step_size, trading);
-        let rng = Rng::seed_from_u64(seed);
+        let rng = Xoroshiro128StarStar::seed_from_u64(seed);
         Ok(Self { env, rng })
     }
 

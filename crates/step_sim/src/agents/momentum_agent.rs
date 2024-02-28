@@ -1,10 +1,10 @@
 use super::Agent;
-use rand_xoshiro::Xoroshiro128StarStar as Rng;
+use rand::RngCore;
 
 pub struct MomentumAgent {}
 
 impl Agent for MomentumAgent {
-    fn update(&mut self, _env: &mut crate::Env, _rng: &mut Rng) {
+    fn update<R: RngCore>(&mut self, _env: &mut crate::Env, _rng: &mut R) {
         todo!()
     }
 }

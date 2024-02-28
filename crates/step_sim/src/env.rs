@@ -9,7 +9,7 @@ use bourse_book::types::{
 };
 use bourse_book::OrderBook;
 use rand::seq::SliceRandom;
-use rand_xoshiro::Xoroshiro128StarStar as Rng;
+use rand::RngCore;
 use std::mem;
 
 /// Discrete event simulation environment
@@ -25,11 +25,11 @@ use std::mem;
 /// ```
 /// use bourse_de;
 /// use bourse_de::types;
-/// use rand_xoshiro::Xoroshiro128StarStar as Rng;
+/// use rand_xoshiro::Xoroshiro128StarStar;
 /// use rand_xoshiro::rand_core::SeedableRng;
 ///
 /// let mut env = bourse_de::Env::new(0, 1_000, true);
-/// let mut rng = Rng::seed_from_u64(101);
+/// let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 ///
 /// // Submit a new order instruction
 /// let order_id = env.place_order(
@@ -103,7 +103,7 @@ impl Env {
     ///
     /// - `rng` - Random generator
     ///
-    pub fn step(&mut self, rng: &mut Rng) {
+    pub fn step<R: RngCore>(&mut self, rng: &mut R) {
         let start_time = self.order_book.get_time();
         self.order_book.reset_trade_vol();
 
@@ -289,6 +289,7 @@ impl Env {
 mod tests {
     use bourse_book::types::Status;
     use rand_xoshiro::rand_core::SeedableRng;
+    use rand_xoshiro::Xoroshiro128StarStar as Rng;
 
     use super::*;
 
