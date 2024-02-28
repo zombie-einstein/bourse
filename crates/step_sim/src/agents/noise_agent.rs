@@ -1,4 +1,5 @@
 //! Agent that randomly places and cancels limit and market orders
+use super::utils::{round_price_down, round_price_up};
 use super::Agent;
 use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
 use crate::Env;
@@ -7,17 +8,19 @@ use rand::Rng;
 use rand_distr::{Distribution, LogNormal};
 use rand_xoshiro::Xoroshiro128StarStar as RngGen;
 
-/// Agent that randomly places and cancels limit and market orders
+/// Agent(s) that randomly place and cancel limit and market orders
 ///
 /// Represents a group of agents that randomly place and cancel
 /// orders at each step of the simulation. Each step:
 ///
 /// - Any currently live orders are randomly selected for cancellation
 /// - Each agent randomly chooses to place a limit order, if so they
-///   place an order on a random side with price above/below the
-///   mid-price sampled from a log-normal distribution
+///   place an order on a random side with a price above/below the
+///   mid-price by a distance sampled from a log-normal distribution
 /// - Each agent randomly chooses to place a market order, if so they
 ///   place an order on a random side
+///
+/// In both cases orders are placed at a fixed size.
 ///
 /// # Examples
 ///
@@ -34,7 +37,7 @@ use rand_xoshiro::Xoroshiro128StarStar as RngGen;
 /// let mut env = Env::new(0, 1_000_000, true);
 ///
 /// let mut agents = SimAgents {
-///     a: NoiseAgent::new(0, 5, 2.0, 0.5, 0.25, 100, 2, 0.0, 1.0),
+///     a: NoiseAgent::new(0, 5, 0.2, 0.2, 0.1, 100, 2, 0.0, 1.0),
 /// };
 ///
 /// sim_runner(&mut env, &mut agents, 101, 10);
@@ -63,12 +66,10 @@ impl NoiseAgent {
     /// - `agent_id_start` - Starting id for
     ///   agents in this set
     /// - `n_agents` - Number of agents
-    /// - `demand` - Represents aggregate demand of
-    ///   these agents. The probability of agents
-    ///   placing limit orders is given by
-    ///   `demand/n_agents`
-    /// - `order_ratio` - Ratio of probability of
-    ///   of placing limit orders to market orders
+    /// - `p_limit` - Probability each agent places
+    ///   a new limit order each step
+    /// - `p_market` - Probability each agent places
+    ///   a new market order each step
     /// - `p_cancel` - Probability of cancelling a
     ///   live order
     /// - `trade_vol` - Size of orders placed by
@@ -86,16 +87,14 @@ impl NoiseAgent {
     pub fn new(
         agent_id_start: TraderId,
         n_agents: u16,
-        demand: f32,
-        order_ratio: f32,
+        p_limit: f32,
+        p_market: f32,
         p_cancel: f32,
         trade_vol: Vol,
         tick_size: Price,
         price_dist_mu: f32,
         price_dist_sigma: f32,
     ) -> Self {
-        let p_limit = demand / f32::from(n_agents);
-        let p_market = order_ratio * p_limit;
         let trader_ids = (agent_id_start..agent_id_start + TraderId::from(n_agents)).collect();
 
         Self {
@@ -112,12 +111,6 @@ impl NoiseAgent {
     }
 }
 
-fn round_price(p: f64, tick_size: f64) -> Price {
-    let p = (p / tick_size).round() * tick_size;
-    let p = p.clamp(0.0, Price::MAX.into());
-    p as Price
-}
-
 impl Agent for NoiseAgent {
     fn update(&mut self, env: &mut Env, rng: &mut RngGen) {
         let live_orders = self
@@ -127,7 +120,7 @@ impl Agent for NoiseAgent {
 
         let (mut live_orders, to_cancel): (Vec<OrderId>, Vec<OrderId>) = live_orders
             .into_iter()
-            .partition(|_| rng.gen::<f32>() < self.p_cancel);
+            .partition(|_| rng.gen::<f32>() > self.p_cancel);
 
         for order_id in to_cancel.into_iter() {
             env.cancel_order(order_id)
@@ -143,12 +136,12 @@ impl Agent for NoiseAgent {
                 let order_id = match side {
                     Side::Bid => {
                         let price = mid_price - dist;
-                        let price = round_price(price, self.tick_size);
+                        let price = round_price_down(price, self.tick_size);
                         env.place_order(Side::Bid, self.trade_vol, *trader_id, Some(price))
                     }
                     Side::Ask => {
                         let price = mid_price + dist;
-                        let price = round_price(price, self.tick_size);
+                        let price = round_price_up(price, self.tick_size);
                         env.place_order(Side::Ask, self.trade_vol, *trader_id, Some(price))
                     }
                 };
@@ -170,12 +163,57 @@ impl Agent for NoiseAgent {
 
 #[cfg(test)]
 mod tests {
+    use bourse_book::types::Event;
+    use rand::SeedableRng;
+
     use super::*;
 
     #[test]
     fn test_init() {
-        let agents = NoiseAgent::new(10, 4, 2.0, 0.5, 0.1, 100, 2, 0.0, 1.0);
+        let agents = NoiseAgent::new(10, 4, 0.5, 0.5, 0.1, 100, 2, 0.0, 1.0);
 
         assert!(agents.trader_ids == vec![10, 11, 12, 13])
+    }
+
+    #[test]
+    fn test_place_and_cancel_limit_orders() {
+        let mut env = Env::new(0, 1_000_000, true);
+        let mut rng = RngGen::seed_from_u64(101);
+
+        let mut agents = NoiseAgent::new(10, 10, 1.0, 0.0, 1.0, 100, 2, 0.0, 10.0);
+
+        agents.update(&mut env, &mut rng);
+
+        assert!(agents.orders.len() == 10);
+        assert!(env.get_transactions().len() == 10);
+
+        let mid_price = env.get_orderbook().mid_price();
+
+        for event in env.get_transactions().iter() {
+            match event {
+                Event::New { order_id } => {
+                    let order = env.order(*order_id);
+                    match order.side {
+                        Side::Bid => assert!(f64::from(order.price) <= mid_price),
+                        Side::Ask => assert!(f64::from(order.price) >= mid_price),
+                    }
+                }
+                _ => panic!("Only new orders should have been placed"),
+            }
+        }
+
+        env.step(&mut rng);
+
+        agents.p_limit = 0.0;
+
+        agents.update(&mut env, &mut rng);
+
+        assert!(agents.orders.len() == 0);
+
+        env.step(&mut rng);
+
+        for i in (0..10).into_iter() {
+            assert!(env.order(i).status == Status::Cancelled);
+        }
     }
 }
