@@ -20,4 +20,5 @@ keywords = ["agent-based-model", "abm", "multi-agent", "simulation", "finance"]
 categories = ["simulation", "finance", "science"]
 
 [workspace.dependencies]
-fastrand = "2.0.0"
+rand_xoshiro = "0.6.0"
+rand = "0.8.5"

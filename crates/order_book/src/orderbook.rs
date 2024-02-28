@@ -173,6 +173,13 @@ impl OrderBook {
         (self.bid_side.best_price(), self.ask_side.best_price())
     }
 
+    /// Get current mid-price (as a float)
+    pub fn mid_price(&self) -> f64 {
+        let (bid, ask) = self.bid_ask();
+        let spread = ask - bid;
+        f64::from(bid) + 0.5 * f64::from(spread)
+    }
+
     /// Get the next order-id in the sequence
     fn current_order_id(&self) -> OrderId {
         self.orders.len()

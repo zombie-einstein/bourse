@@ -3,9 +3,9 @@ use std::collections::HashMap;
 use super::types::{cast_order, cast_trade, status_to_int, PyOrder, PyTrade};
 use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_de::Env as BaseEnv;
-use fastrand::Rng;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::prelude::*;
+use rand_xoshiro::{rand_core::SeedableRng, Xoroshiro128StarStar as Rng};
 
 /// Discrete event simulation environment
 ///
@@ -60,7 +60,7 @@ impl StepEnv {
     #[pyo3(signature = (seed, start_time, step_size, trading=true))]
     pub fn new(seed: u64, start_time: Nanos, step_size: Nanos, trading: bool) -> PyResult<Self> {
         let env = BaseEnv::new(start_time, step_size, trading);
-        let rng = Rng::with_seed(seed);
+        let rng = Rng::seed_from_u64(seed);
         Ok(Self { env, rng })
     }
 

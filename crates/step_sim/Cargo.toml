@@ -11,8 +11,10 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-fastrand.workspace = true
+rand_xoshiro.workspace = true
+rand.workspace = true
 kdam = "0.3.0"
+rand_distr = "0.4.3"
 
 bourse-book = { path="../order_book" , version="0.1.2" }
 bourse-macros = { path="../macros", version="0.1.2" }
