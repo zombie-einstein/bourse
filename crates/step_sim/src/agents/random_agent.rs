@@ -1,6 +1,9 @@
 use super::Agent;
 use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
 use crate::Env;
+use rand::seq::SliceRandom;
+use rand::Rng;
+use rand_xoshiro::Xoroshiro128StarStar as RngGen;
 
 /// Agents that place orders with uniformly sampled parameters
 ///
@@ -29,7 +32,6 @@ use crate::Env;
 /// use bourse_de::agents::{Agent, AgentSet, RandomAgents};
 /// use bourse_de::{sim_runner, Env};
 /// use bourse_macros::Agents;
-/// use fastrand::Rng;
 ///
 /// #[derive(Agents)]
 /// struct SimAgents {
@@ -71,13 +73,13 @@ impl RandomAgents {
 }
 
 impl Agent for RandomAgents {
-    fn update(&mut self, env: &mut Env, rng: &mut fastrand::Rng) {
+    fn update(&mut self, env: &mut Env, rng: &mut RngGen) {
         let new_orders: Vec<Option<OrderId>> = self
             .orders
             .iter_mut()
             .enumerate()
             .map(|(n, i)| {
-                let p = rng.f32();
+                let p = rng.gen::<f32>();
 
                 match p < self.activity_rate {
                     true => {
@@ -85,11 +87,11 @@ impl Agent for RandomAgents {
                             env.cancel_order(i.unwrap());
                             None
                         } else {
-                            let side = rng.choice([Side::Ask, Side::Bid]).unwrap();
-                            let tick = rng.u32(self.tick_range.0..self.tick_range.1);
-                            let vol = rng.u32(self.vol_range.0..self.vol_range.1);
+                            let side = [Side::Ask, Side::Bid].choose(rng).unwrap();
+                            let tick = rng.gen_range(self.tick_range.0..self.tick_range.1);
+                            let vol = rng.gen_range(self.vol_range.0..self.vol_range.1);
                             Some(env.place_order(
-                                side,
+                                *side,
                                 vol,
                                 TraderId::try_from(n).unwrap(),
                                 Some(tick * self.tick_size),
@@ -109,12 +111,12 @@ impl Agent for RandomAgents {
 mod tests {
     use super::*;
     use bourse_book::types::Event;
-    use fastrand::Rng;
+    use rand::SeedableRng;
 
     #[test]
     fn test_activity_rate() {
         let mut env = Env::new(0, 1000, true);
-        let mut rng = Rng::with_seed(101);
+        let mut rng = RngGen::seed_from_u64(101);
 
         let mut agents = RandomAgents::new(2, (10, 20), (20, 30), 1, 0.0);
 
@@ -129,7 +131,7 @@ mod tests {
     #[test]
     fn test_order_place_then_cancel() {
         let mut env = Env::new(0, 1000, true);
-        let mut rng = Rng::with_seed(101);
+        let mut rng = RngGen::seed_from_u64(101);
 
         let mut agents = RandomAgents::new(1, (10, 20), (20, 30), 1, 1.0);
 

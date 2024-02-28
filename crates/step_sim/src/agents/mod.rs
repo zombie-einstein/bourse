@@ -4,10 +4,11 @@
 //! that is called each step of the simulation.
 //!
 use super::env::Env;
-use fastrand::Rng;
+use rand_xoshiro::Xoroshiro128StarStar as Rng;
 mod momentum_agent;
 mod noise_agent;
 mod random_agent;
+mod utils;
 
 pub use bourse_macros::Agents;
 pub use momentum_agent::MomentumAgent;
@@ -26,7 +27,7 @@ pub use random_agent::RandomAgents;
 /// ```
 /// use bourse_de::Env;
 /// use bourse_de::agents::{Agent, Agents, AgentSet};
-/// use fastrand::Rng;
+/// use rand_xoshiro::Xoroshiro128StarStar as Rng;
 ///
 /// struct AgentType{}
 ///
@@ -47,7 +48,7 @@ pub trait Agent {
     /// # Argument
     ///
     /// - `env` - Reference to a [Env] simulation environment
-    /// - `rng` - Fastrand random generator
+    /// - `rng` - Random generator
     ///
     fn update(&mut self, env: &mut Env, rng: &mut Rng);
 }
@@ -70,7 +71,7 @@ pub trait Agent {
 /// ```
 /// use bourse_de::Env;
 /// use bourse_de::agents::{Agent, Agents, AgentSet};
-/// use fastrand::Rng;
+/// use rand_xoshiro::Xoroshiro128StarStar as Rng;
 ///
 /// struct AgentType{}
 ///
@@ -87,12 +88,12 @@ pub trait Agent {
 /// }
 /// ```
 ///
-/// this is equivelant to
+/// this is equivalent to
 ///
 /// ```
 /// # use bourse_de::Env;
 /// # use bourse_de::agents::{Agent, Agents, AgentSet};
-/// # use fastrand::Rng;
+/// # use rand_xoshiro::Xoroshiro128StarStar as Rng;
 /// # struct AgentType{}
 /// # impl Agent for AgentType {
 /// #    fn update(
@@ -125,7 +126,7 @@ pub trait AgentSet {
     /// # Arguments
     ///
     /// - `env` - Simulation environment
-    /// - `rng` - Fastrand random generator
+    /// - `rng` - Random generator
     ///
     fn update(&mut self, env: &mut Env, rng: &mut Rng);
 }
@@ -134,6 +135,7 @@ pub trait AgentSet {
 mod tests {
     use super::*;
     use bourse_book::types::{Price, Side};
+    use rand_xoshiro::rand_core::SeedableRng;
 
     struct TestAgent {
         side: Side,
@@ -161,7 +163,7 @@ mod tests {
         }
 
         let mut env = Env::new(0, 1000, true);
-        let mut rng = Rng::with_seed(101);
+        let mut rng = Rng::seed_from_u64(101);
 
         let mut test_agents = TestAgents {
             a: TestAgent::new(Side::Bid, 20),

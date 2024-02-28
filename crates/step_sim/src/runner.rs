@@ -2,6 +2,8 @@
 use super::agents::AgentSet;
 use super::env::Env;
 use kdam::tqdm;
+use rand_xoshiro::rand_core::SeedableRng;
+use rand_xoshiro::Xoroshiro128StarStar as Rng;
 
 /// Run a simulation for a fixed number of steps
 ///
@@ -14,7 +16,7 @@ use kdam::tqdm;
 /// ```
 /// use bourse_de::{Env, sim_runner};
 /// use bourse_de::agents::AgentSet;
-/// use fastrand::Rng;
+/// use rand_xoshiro::Xoroshiro128StarStar as Rng;
 ///
 /// // Dummy agent-type
 /// struct Agents{}
@@ -40,7 +42,7 @@ use kdam::tqdm;
 /// - `n_steps` - Number of simulation steps
 ///
 pub fn sim_runner<A: AgentSet>(env: &mut Env, agents: &mut A, seed: u64, n_steps: u64) {
-    let mut rng = fastrand::Rng::with_seed(seed);
+    let mut rng = Rng::seed_from_u64(seed);
 
     for _ in tqdm!(0..n_steps) {
         agents.update(env, &mut rng);

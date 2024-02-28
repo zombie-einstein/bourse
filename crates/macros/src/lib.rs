@@ -40,7 +40,7 @@ fn impl_agents_macro(ast: &syn::DeriveInput) -> TokenStream {
 
     let output = quote! {
         impl AgentSet for #name {
-            fn update(&mut self, env: &mut Env, rng: &mut Rng) {
+            fn update(&mut self, env: &mut Env, rng: &mut rand_xoshiro::Xoroshiro128StarStar) {
                 #call_tokens
             }
         }

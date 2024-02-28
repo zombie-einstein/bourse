@@ -8,7 +8,8 @@ use bourse_book::types::{
     Event, Nanos, Order, OrderCount, OrderId, Price, Side, Status, Trade, TraderId, Vol,
 };
 use bourse_book::OrderBook;
-use fastrand::Rng;
+use rand::seq::SliceRandom;
+use rand_xoshiro::Xoroshiro128StarStar as Rng;
 use std::mem;
 
 /// Discrete event simulation environment
@@ -24,10 +25,11 @@ use std::mem;
 /// ```
 /// use bourse_de;
 /// use bourse_de::types;
-/// use fastrand::Rng;
+/// use rand_xoshiro::Xoroshiro128StarStar as Rng;
+/// use rand_xoshiro::rand_core::SeedableRng;
 ///
 /// let mut env = bourse_de::Env::new(0, 1_000, true);
-/// let mut rng = Rng::with_seed(101);
+/// let mut rng = Rng::seed_from_u64(101);
 ///
 /// // Submit a new order instruction
 /// let order_id = env.place_order(
@@ -99,14 +101,14 @@ impl Env {
     ///
     /// # Arguments
     ///
-    /// - `rng` - Fastrand random generator
+    /// - `rng` - Random generator
     ///
     pub fn step(&mut self, rng: &mut Rng) {
         let start_time = self.order_book.get_time();
         self.order_book.reset_trade_vol();
 
         let mut transactions = mem::take(&mut self.transactions);
-        rng.shuffle(transactions.as_mut_slice());
+        transactions.shuffle(rng);
 
         for (i, t) in transactions.into_iter().enumerate() {
             self.order_book
@@ -286,6 +288,7 @@ impl Env {
 #[cfg(test)]
 mod tests {
     use bourse_book::types::Status;
+    use rand_xoshiro::rand_core::SeedableRng;
 
     use super::*;
 
@@ -293,7 +296,7 @@ mod tests {
     fn test_env() {
         let step_size: Nanos = 1000;
         let mut env = Env::new(0, step_size, true);
-        let mut rng = Rng::with_seed(101);
+        let mut rng = Rng::seed_from_u64(101);
 
         env.place_order(Side::Bid, 10, 101, Some(10));
         env.place_order(Side::Ask, 20, 101, Some(20));
