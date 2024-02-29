@@ -16,8 +16,8 @@ rand.workspace = true
 kdam = "0.3.0"
 rand_distr = "0.4.3"
 
-bourse-book = { path="../order_book" , version="0.1.2" }
-bourse-macros = { path="../macros", version="0.1.2" }
+bourse-book = { path="../order_book" , version="0.2.0" }
+bourse-macros = { path="../macros", version="0.2.0" }
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
