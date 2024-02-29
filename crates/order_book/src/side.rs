@@ -30,6 +30,7 @@ pub trait SideFunctionality {
 }
 
 /// Order book side data structure
+#[derive(Default)]
 pub struct OrderBookSide {
     /// Total volume
     vol: Vol,
@@ -40,15 +41,6 @@ pub struct OrderBookSide {
 }
 
 impl OrderBookSide {
-    /// Initialise an empty side
-    fn new() -> Self {
-        Self {
-            vol: 0,
-            volumes: BTreeMap::new(),
-            orders: BTreeMap::new(),
-        }
-    }
-
     /// Insert an order and update volume tracking
     ///
     /// # Arguments
@@ -137,15 +129,17 @@ impl OrderBookSide {
 }
 
 /// Bid-side specific functionality
+#[derive(Default)]
 pub struct BidSide(OrderBookSide);
 
 /// Ask-side specific functionality
+#[derive(Default)]
 pub struct AskSide(OrderBookSide);
 
 impl SideFunctionality for BidSide {
     /// Initialise a new empty bid-side
     fn new() -> Self {
-        Self(OrderBookSide::new())
+        Self::default()
     }
 
     /// Insert a bid order and update volume tracking
@@ -210,7 +204,7 @@ impl SideFunctionality for BidSide {
 impl SideFunctionality for AskSide {
     /// Initialise a new empty ask-side
     fn new() -> Self {
-        Self(OrderBookSide::new())
+        Self::default()
     }
 
     /// Insert a ask order and update volume tracking
@@ -322,7 +316,7 @@ mod tests {
 
     #[test]
     fn test_insert_order() {
-        let mut side = OrderBookSide::new();
+        let mut side = OrderBookSide::default();
 
         side.insert_order((Side::Ask, 100, 10), 1, 10);
 

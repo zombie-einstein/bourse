@@ -15,7 +15,10 @@
 //! book.cancel_order(order_id);
 //! ```
 //!
+use serde::{Deserialize, Serialize};
 use std::cmp::min;
+use std::fmt;
+use std::path::Path;
 
 use crate::types::Status;
 
@@ -29,7 +32,7 @@ use super::types::{
 /// Orders are linked with a key
 /// used to track keys in a price-time
 /// priority map used for order matching.
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub struct OrderEntry {
     /// Order data
     order: Order,
@@ -54,6 +57,8 @@ pub struct OrderEntry {
 /// book.cancel_order(order_id);
 /// ```
 ///
+#[derive(Serialize, Deserialize)]
+#[serde(try_from = "OrderBookState")]
 pub struct OrderBook {
     /// Simulated time, intended to represent
     /// nano-seconds, but arbitrary units can
@@ -62,8 +67,10 @@ pub struct OrderBook {
     /// Cumulative trade volume
     trade_vol: Vol,
     /// Ask side of the book data structure
+    #[serde(skip_serializing)]
     ask_side: AskSide,
     /// Bid side of the book data structure
+    #[serde(skip_serializing)]
     bid_side: BidSide,
     /// Orders created on the market, once
     /// created orders persist in this vector
@@ -233,6 +240,31 @@ impl OrderBook {
 
         self.orders.push(OrderEntry { order, key });
 
+        order_id
+    }
+
+    /// Convenience function to create and immediately place an order
+    ///
+    /// Create a new order in the order list and place it on the market.
+    /// Returns the id of the newly created order.
+    ///
+    /// # Arguments
+    ///
+    /// - `side` - Order side
+    /// - `vol` - Order volume
+    /// - `trader_id` - Id of the trader placing the order
+    /// - `price` -  Price of the order, if `None` the
+    ///   order is treated as a market order
+    ///
+    pub fn create_and_place_order(
+        &mut self,
+        side: Side,
+        vol: Vol,
+        trader_id: TraderId,
+        price: Option<Price>,
+    ) -> OrderId {
+        let order_id = self.create_order(side, vol, trader_id, price);
+        self.place_order(order_id);
         order_id
     }
 
@@ -537,8 +569,8 @@ impl OrderBook {
     /// Modify the price and/or volume of an order
     ///
     /// If only the volume is *reduced*, then the order
-    /// maintains is price-time priority. Otherwise the
-    /// order is replaced. The order modified order
+    /// maintains its price-time priority. Otherwise the
+    /// order is replaced. The modified order
     /// maintains the same id.
     ///
     /// If the price/vol are None then the original
@@ -612,6 +644,36 @@ impl OrderBook {
     pub fn get_trades(&self) -> &Vec<Trade> {
         &self.trades
     }
+
+    /// Save a snapshot of the order-book to JSON
+    ///
+    /// # Argument
+    ///
+    /// - `path` - Path to write snapshot JSON to
+    /// - `pretty` - If `True` JSON will be pretty printed
+    ///
+    pub fn save_json<P: AsRef<Path>>(&self, path: P, pretty: bool) -> std::io::Result<()> {
+        let file = std::fs::File::create(path)?;
+        let file = std::io::BufWriter::new(file);
+        match pretty {
+            true => serde_json::to_writer_pretty(file, self)?,
+            false => serde_json::to_writer(file, self)?,
+        }
+        Ok(())
+    }
+
+    /// Load an order-book from a JSON snapshot
+    ///
+    /// # Argument
+    ///
+    /// - `path` - Path to read snapshot JSON from
+    ///
+    pub fn load_json<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
+        let file = std::fs::File::open(path)?;
+        let file = std::io::BufReader::new(file);
+        let order_book: Self = serde_json::from_reader(file)?;
+        Ok(order_book)
+    }
 }
 
 /// Match two orders and record the trade
@@ -651,8 +713,55 @@ fn match_orders(
     trade_vol
 }
 
+/// Dummy order book to enable deserialization
+#[derive(Deserialize)]
+struct OrderBookState {
+    t: Nanos,
+    trade_vol: Vol,
+    orders: Vec<OrderEntry>,
+    trades: Vec<Trade>,
+    trading: bool,
+}
+
+struct OrderBookConversionErrror;
+
+impl fmt::Display for OrderBookConversionErrror {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Failed to convert OrderBookState to an OrderBook")
+    }
+}
+
+impl std::convert::TryFrom<OrderBookState> for OrderBook {
+    type Error = OrderBookConversionErrror;
+
+    fn try_from(state: OrderBookState) -> Result<Self, Self::Error> {
+        let mut bid_side = BidSide::default();
+        let mut ask_side = AskSide::default();
+
+        for OrderEntry { order, key } in state.orders.iter() {
+            if order.status == Status::Active {
+                match order.side {
+                    Side::Bid => bid_side.insert_order(*key, order.order_id, order.vol),
+                    Side::Ask => ask_side.insert_order(*key, order.order_id, order.vol),
+                }
+            }
+        }
+
+        Ok(Self {
+            t: state.t,
+            trade_vol: state.trade_vol,
+            ask_side,
+            bid_side,
+            orders: state.orders,
+            trades: state.trades,
+            trading: state.trading,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -911,5 +1020,43 @@ mod tests {
         assert!(book.bid_vol() == 0);
         assert!(book.ask_vol() == 0);
         assert!(book.orders[1].order.status == Status::Cancelled);
+    }
+
+    #[test]
+    fn test_serialisation() {
+        use rand::{seq::SliceRandom, Rng};
+        use rand_xoshiro::rand_core::SeedableRng;
+        use rand_xoshiro::Xoroshiro128Plus;
+
+        let mut book = OrderBook::new(0, true);
+
+        let mut rng = Xoroshiro128Plus::seed_from_u64(101);
+
+        for i in (0..200).into_iter() {
+            let side = [Side::Bid, Side::Ask].choose(&mut rng).unwrap();
+            let price = rng.gen_range(20..40);
+            let vol = rng.gen_range(5..20);
+            book.create_and_place_order(*side, vol, 0, Some(price));
+            book.set_time(i);
+        }
+
+        let book_snapshot = serde_json::to_string(&book).unwrap();
+        let loaded_book = serde_json::from_str::<OrderBook>(book_snapshot.as_str()).unwrap();
+
+        assert!(book.trading == loaded_book.trading);
+        assert!(book.trade_vol == loaded_book.trade_vol);
+
+        assert!(book.bid_ask() == loaded_book.bid_ask());
+
+        assert!(book.bid_best_vol_and_orders() == loaded_book.bid_best_vol_and_orders());
+        assert!(book.bid_vol() == loaded_book.bid_vol());
+
+        assert!(book.ask_best_vol_and_orders() == loaded_book.ask_best_vol_and_orders());
+        assert!(book.bid_vol() == loaded_book.bid_vol());
+
+        assert!(book.current_order_id() == loaded_book.current_order_id());
+
+        assert!(book.bid_side.best_order_idx() == loaded_book.bid_side.best_order_idx());
+        assert!(book.ask_side.best_order_idx() == loaded_book.ask_side.best_order_idx());
     }
 }

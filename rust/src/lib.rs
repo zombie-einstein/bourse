@@ -8,5 +8,6 @@ use pyo3::prelude::*;
 fn core(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<order_book::OrderBook>()?;
     m.add_class::<step_sim::StepEnv>()?;
+    m.add_function(wrap_pyfunction!(order_book::order_book_from_json, m)?)?;
     Ok(())
 }

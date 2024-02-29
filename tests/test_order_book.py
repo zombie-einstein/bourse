@@ -173,3 +173,26 @@ def test_get_orders():
     assert list(orders_df["vol"]) == [10, 20, 10, 20]
     assert list(orders_df["price"]) == [50, 60, 55, 65]
     assert list(orders_df["order_id"]) == [0, 1, 2, 3]
+
+
+def test_read_write_snapshot(tmp_path):
+
+    ob = bourse.core.OrderBook(0)
+
+    ob.place_order(True, 10, 11, price=50)
+    ob.place_order(False, 20, 12, price=60)
+    ob.place_order(True, 10, 11, price=55)
+    ob.place_order(False, 20, 12, price=65)
+
+    path = str(tmp_path / "foo.json")
+
+    ob.save_json_snapshot(path)
+
+    loaded_ob = bourse.core.order_book_from_json(path)
+
+    assert ob.bid_ask() == loaded_ob.bid_ask()
+    assert ob.best_ask_vol_and_orders() == loaded_ob.best_ask_vol_and_orders()
+    assert ob.best_bid_vol_and_orders() == loaded_ob.best_bid_vol_and_orders()
+
+    assert ob.get_orders() == loaded_ob.get_orders()
+    assert ob.get_trades() == loaded_ob.get_trades()

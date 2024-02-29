@@ -8,6 +8,8 @@
 //!
 //! # Examples
 //!
+//! ## Initialisation and Updating an Order Book
+//!
 //! ```
 //! use bourse_book;
 //! use bourse_book::types;
@@ -25,13 +27,60 @@
 //! // Get the current touch prices
 //! let (bid, ask) = book.bid_ask();
 //!
+//! // Set the time of the orderbook
+//! book.set_time(1000);
+//!
 //! // Cancel the order
 //! book.cancel_order(order_id);
 //! ```
+//!
+//! [OrderBook] also implements functionality
+//! to modify orders and retrieve market data.
+//! See [OrderBook] for full details of the API.
+//!
+//! ## Order & Trade Histories
+//!
+//! [OrderBook] tracks any orders created and any trades executed
+//! over the course of the order books existence. These can
+//! be retrieved using:
+//!
+//! ```
+//! # use bourse_book::OrderBook;
+//! # use bourse_book::types::{Order, Trade};
+//! # let book = OrderBook::new(0, true);
+//! // Get references to all the orders created
+//! let order_history: Vec<&Order> = book.get_orders();
+//! // Get a reference to trade records
+//! let trade_history: &Vec<Trade> = book.get_trades();
+//! ```
+//!
+//! ## Persisting State
+//!
+//! OrderBook implements [serde::Serialize] and
+//! [serde::Deserialize] traits to allow the state of
+//! the order book to be persisted, this can be done
+//! manually, for example:
+//!
+//! ```
+//! # use bourse_book::OrderBook;
+//! # let book = OrderBook::new(0, true);
+//! let state = serde_json::to_string(&book).unwrap();
+//! let book = serde_json::from_str::<OrderBook>(state.as_str()).unwrap();
+//! ```
+//! or the methods [OrderBook::save_json] and [OrderBook::load_json] can
+//! be used to save/load the OrderBook state to/from a JSON file:
+//!
+//! ```no_run
+//! # use bourse_book::OrderBook;
+//! # let book = OrderBook::new(0, true);
+//! book.save_json("foo.json", true);
+//! let loaded_book = OrderBook::load_json("foo.json");
+//! ```
+//!
 //! # Notes
 //!
 //! - Orders are sorted by price-time priority. To
-//!   reduce any ambiguity in ordering the simulated
+//!   reduce any ambiguity in ordering, the simulated
 //!   time of the market should be updated in
 //!   between placing orders on the market.
 //! - For accuracy prices are stored as unsigned
