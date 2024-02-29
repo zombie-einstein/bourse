@@ -57,13 +57,26 @@ retrieved with
        trades
    )
 
+The state of the order book can be written to a JSON
+file using :py:meth:`bourse.core.OrderBook.save_json_snapshot`,
+the same snapshot can then be used to initialise an
+orderbook using :py:meth:`bourse.core.order_book_from_json`
+
+.. code-block:: python
+
+   # Save order book state to foo.json
+   book.save_json_snapshot("foo.json")
+
+   # Create a new order book with state from the snapshot
+   loaded_book = bourse.core.order_book_from_json("foo.json")
+
 See :py:class:`bourse.core.OrderBook`
 for details of the full order book API.
 
-Simulation Environment
-----------------------
+Discrete Event Simulation Environment
+-------------------------------------
 
-A simulation environment can be initialised from
+A discrete event simulation environment can be initialised from
 a random seed, start-time, and step-size (i.e. how
 long in time each simulated step is)
 

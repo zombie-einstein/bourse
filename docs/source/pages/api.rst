@@ -13,3 +13,5 @@ API Reference
 .. python-apigen-group:: order_book_class
 
 .. python-apigen-group:: step_env_class
+
+.. python-apigen-group:: public-members

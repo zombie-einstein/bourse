@@ -356,4 +356,39 @@ impl OrderBook {
             .map(types::cast_order)
             .collect()
     }
+
+    /// save_json_snapshot(path: str, pretty: bool = False)
+    ///
+    /// Save a snapshot of the order book state to JSON
+    ///
+    /// Parameters
+    /// ----------
+    /// path: str
+    ///     Path to write the JSON snapshot to.
+    /// pretty: bool, optional
+    ///     If ``True`` the JSON output will be pretty-print
+    ///     formatted, default value is ``False``
+    ///
+    #[pyo3(signature = (path, pretty=false))]
+    pub fn save_json_snapshot(&self, path: String, pretty: bool) -> PyResult<()> {
+        self.0.save_json(path, pretty)?;
+        Ok(())
+    }
+}
+
+/// order_book_from_json(path: str) -> bourse.core.OrderBook
+///
+/// Load an order book from a JSON snapshot
+///
+/// Initialise a new instance of a :py:class:`bourse.core.OrderBook`
+/// with the state Initialised from a previously created JSON snapshot.
+///
+/// Parameters
+/// ----------
+/// path: str
+///     Path to load the JSON snapshot from.
+///
+#[pyfunction]
+pub fn order_book_from_json(path: String) -> PyResult<OrderBook> {
+    Ok(OrderBook(BaseOrderBook::load_json(path.as_str())?))
 }
