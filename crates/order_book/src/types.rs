@@ -1,5 +1,7 @@
 //! Type aliases and order data-structures
 
+use serde::{Deserialize, Serialize};
+
 /// Order-id
 pub type OrderId = usize;
 /// Order lookup key
@@ -16,14 +18,14 @@ pub type TraderId = u32;
 pub type OrderCount = u32;
 
 /// Market side
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub enum Side {
     Bid,
     Ask,
 }
 
 /// Order status
-#[derive(Clone, PartialEq, Eq, Copy, Debug)]
+#[derive(Clone, PartialEq, Eq, Copy, Debug, Serialize, Deserialize)]
 pub enum Status {
     /// Newly created, not placed
     New,
@@ -39,7 +41,7 @@ pub enum Status {
 }
 
 /// Order data
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct Order {
     /// Order side
     pub side: Side,
@@ -65,6 +67,7 @@ pub struct Order {
 }
 
 /// Trade record
+#[derive(Serialize, Deserialize)]
 pub struct Trade {
     /// Trade time
     pub t: Nanos,
