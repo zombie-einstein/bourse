@@ -18,6 +18,7 @@
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt;
+use std::path::Path;
 
 use crate::types::Status;
 
@@ -642,6 +643,36 @@ impl OrderBook {
     /// Reference to trade records
     pub fn get_trades(&self) -> &Vec<Trade> {
         &self.trades
+    }
+
+    /// Save a snapshot of the order-book to JSON
+    ///
+    /// # Argument
+    ///
+    /// - `path` - Path to write snapshot JSON to
+    /// - `pretty` - If `True` JSON will be pretty printed
+    ///
+    pub fn save_json<P: AsRef<Path>>(&self, path: P, pretty: bool) -> std::io::Result<()> {
+        let file = std::fs::File::create(path)?;
+        let file = std::io::BufWriter::new(file);
+        match pretty {
+            true => serde_json::to_writer_pretty(file, self)?,
+            false => serde_json::to_writer(file, self)?,
+        }
+        Ok(())
+    }
+
+    /// Load an order-book from a JSON snapshot
+    ///
+    /// # Argument
+    ///
+    /// - `path` - Path to read snapshot JSON from
+    ///
+    pub fn load_json<P: AsRef<Path>>(path: P) -> std::io::Result<Self> {
+        let file = std::fs::File::open(path)?;
+        let file = std::io::BufReader::new(file);
+        let order_book: Self = serde_json::from_reader(file)?;
+        Ok(order_book)
     }
 }
 
