@@ -1,12 +1,21 @@
 //! Agent that randomly places and cancels limit and market orders
-use super::utils::{round_price_down, round_price_up};
+use super::common;
 use super::Agent;
-use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
+use crate::types::{OrderId, Price, Side, TraderId, Vol};
 use crate::Env;
-use rand::seq::SliceRandom;
 use rand::Rng;
 use rand::RngCore;
-use rand_distr::{Distribution, LogNormal};
+use rand_distr::LogNormal;
+
+pub struct NoiseAgentParams {
+    pub tick_size: Price,
+    pub p_limit: f32,
+    pub p_market: f32,
+    pub p_cancel: f32,
+    pub trade_vol: Vol,
+    pub price_dist_mu: f64,
+    pub price_dist_sigma: f64,
+}
 
 /// Agent(s) that randomly place and cancel limit and market orders
 ///
@@ -25,7 +34,7 @@ use rand_distr::{Distribution, LogNormal};
 /// # Examples
 ///
 /// ```
-/// use bourse_de::agents::{Agent, AgentSet, NoiseAgent};
+/// use bourse_de::agents::{Agent, AgentSet, NoiseAgent, NoiseAgentParams};
 /// use bourse_de::{sim_runner, Env};
 /// use bourse_macros::Agents;
 ///
@@ -36,8 +45,17 @@ use rand_distr::{Distribution, LogNormal};
 ///
 /// let mut env = Env::new(0, 1_000_000, true);
 ///
+/// let params = NoiseAgentParams{
+///     tick_size: 2,
+///     p_limit: 0.2,
+///     p_market: 0.2,
+///     p_cancel: 0.1,
+///     trade_vol: 100,
+///     price_dist_mu: 0.0,
+///     price_dist_sigma: 1.0,
+/// };
 /// let mut agents = SimAgents {
-///     a: NoiseAgent::new(0, 5, 0.2, 0.2, 0.1, 100, 2, 0.0, 1.0),
+///     a: NoiseAgent::new(0, 5, params),
 /// };
 ///
 /// sim_runner(&mut env, &mut agents, 101, 10);
@@ -45,17 +63,14 @@ use rand_distr::{Distribution, LogNormal};
 ///
 /// # References
 ///
-/// <https://arxiv.org/abs/2208.13654>
+/// 1. <https://arxiv.org/abs/2208.13654>
 ///
 pub struct NoiseAgent {
     tick_size: f64,
-    p_limit: f32,
-    p_market: f32,
-    p_cancel: f32,
-    trade_vol: Vol,
     price_dist: LogNormal<f64>,
     orders: Vec<OrderId>,
     trader_ids: Vec<TraderId>,
+    params: NoiseAgentParams,
 }
 
 impl NoiseAgent {
@@ -83,76 +98,60 @@ impl NoiseAgent {
     ///   log-normal distribution that limit-order
     ///   prices are sampled from
     ///
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        agent_id_start: TraderId,
-        n_agents: u16,
-        p_limit: f32,
-        p_market: f32,
-        p_cancel: f32,
-        trade_vol: Vol,
-        tick_size: Price,
-        price_dist_mu: f32,
-        price_dist_sigma: f32,
-    ) -> Self {
+    pub fn new(agent_id_start: TraderId, n_agents: u16, params: NoiseAgentParams) -> Self {
         let trader_ids = (agent_id_start..agent_id_start + TraderId::from(n_agents)).collect();
 
         Self {
-            tick_size: tick_size.into(),
-            p_limit,
-            p_market,
-            p_cancel,
-            trade_vol,
-            price_dist: LogNormal::<f64>::new(price_dist_mu.into(), price_dist_sigma.into())
+            tick_size: params.tick_size.into(),
+
+            price_dist: LogNormal::<f64>::new(params.price_dist_mu, params.price_dist_sigma)
                 .unwrap(),
             orders: Vec::new(),
             trader_ids,
+            params,
         }
     }
 }
 
 impl Agent for NoiseAgent {
     fn update<R: RngCore>(&mut self, env: &mut Env, rng: &mut R) {
-        let live_orders = self
-            .orders
-            .iter()
-            .filter(|x| env.order_status(**x) == Status::Active);
-
-        let (mut live_orders, to_cancel): (Vec<OrderId>, Vec<OrderId>) = live_orders
-            .into_iter()
-            .partition(|_| rng.gen::<f32>() > self.p_cancel);
-
-        for order_id in to_cancel.into_iter() {
-            env.cancel_order(order_id)
-        }
+        let mut live_orders =
+            common::cancel_live_orders(env, rng, &self.orders, self.params.p_cancel);
 
         let mid_price = env.get_orderbook().mid_price();
 
         for trader_id in self.trader_ids.iter() {
-            if rng.gen::<f32>() < self.p_limit {
-                let side = [Side::Bid, Side::Ask].choose(rng).unwrap();
-                let dist = self.price_dist.sample(rng).abs();
+            if rng.gen::<f32>() < self.params.p_limit {
+                let side = rng.gen_bool(0.5);
 
                 let order_id = match side {
-                    Side::Bid => {
-                        let price = mid_price - dist;
-                        let price = round_price_down(price, self.tick_size);
-                        env.place_order(Side::Bid, self.trade_vol, *trader_id, Some(price))
-                    }
-                    Side::Ask => {
-                        let price = mid_price + dist;
-                        let price = round_price_up(price, self.tick_size);
-                        env.place_order(Side::Ask, self.trade_vol, *trader_id, Some(price))
-                    }
+                    true => common::place_buy_limit_order(
+                        env,
+                        rng,
+                        self.price_dist,
+                        mid_price,
+                        self.tick_size,
+                        self.params.trade_vol,
+                        *trader_id,
+                    ),
+                    false => common::place_sell_limit_order(
+                        env,
+                        rng,
+                        self.price_dist,
+                        mid_price,
+                        self.tick_size,
+                        self.params.trade_vol,
+                        *trader_id,
+                    ),
                 };
                 live_orders.push(order_id);
             }
 
-            if rng.gen::<f32>() < self.p_market {
-                let side = [Side::Bid, Side::Ask].choose(rng).unwrap();
+            if rng.gen::<f32>() < self.params.p_market {
+                let side = rng.gen_bool(0.5);
                 match side {
-                    Side::Bid => env.place_order(Side::Bid, self.trade_vol, *trader_id, None),
-                    Side::Ask => env.place_order(Side::Ask, self.trade_vol, *trader_id, None),
+                    true => env.place_order(Side::Bid, self.params.trade_vol, *trader_id, None),
+                    false => env.place_order(Side::Ask, self.params.trade_vol, *trader_id, None),
                 };
             }
         }
@@ -163,6 +162,7 @@ impl Agent for NoiseAgent {
 
 #[cfg(test)]
 mod tests {
+    use crate::types::Status;
     use bourse_book::types::Event;
     use rand::SeedableRng;
     use rand_xoshiro::Xoroshiro128StarStar;
@@ -171,7 +171,16 @@ mod tests {
 
     #[test]
     fn test_init() {
-        let agents = NoiseAgent::new(10, 4, 0.5, 0.5, 0.1, 100, 2, 0.0, 1.0);
+        let params = NoiseAgentParams {
+            tick_size: 2,
+            p_limit: 0.5,
+            p_market: 0.5,
+            p_cancel: 0.1,
+            trade_vol: 100,
+            price_dist_mu: 0.0,
+            price_dist_sigma: 1.0,
+        };
+        let agents = NoiseAgent::new(10, 4, params);
 
         assert!(agents.trader_ids == vec![10, 11, 12, 13])
     }
@@ -181,7 +190,16 @@ mod tests {
         let mut env = Env::new(0, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
-        let mut agents = NoiseAgent::new(10, 10, 1.0, 0.0, 1.0, 100, 2, 0.0, 10.0);
+        let params = NoiseAgentParams {
+            tick_size: 2,
+            p_limit: 1.0,
+            p_market: 0.0,
+            p_cancel: 1.0,
+            trade_vol: 100,
+            price_dist_mu: 0.0,
+            price_dist_sigma: 10.0,
+        };
+        let mut agents = NoiseAgent::new(10, 10, params);
 
         agents.update(&mut env, &mut rng);
 
@@ -205,7 +223,7 @@ mod tests {
 
         env.step(&mut rng);
 
-        agents.p_limit = 0.0;
+        agents.params.p_limit = 0.0;
 
         agents.update(&mut env, &mut rng);
 

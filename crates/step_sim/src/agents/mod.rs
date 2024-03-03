@@ -5,14 +5,14 @@
 //!
 use super::env::Env;
 use rand::RngCore;
+pub mod common;
 mod momentum_agent;
 mod noise_agent;
 mod random_agent;
-mod utils;
 
 pub use bourse_macros::Agents;
-pub use momentum_agent::MomentumAgent;
-pub use noise_agent::NoiseAgent;
+pub use momentum_agent::{MomentumAgent, MomentumParams};
+pub use noise_agent::{NoiseAgent, NoiseAgentParams};
 pub use random_agent::RandomAgents;
 
 /// Homogeneous agent set functionality

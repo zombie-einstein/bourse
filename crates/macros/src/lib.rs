@@ -7,7 +7,33 @@ use quote::quote;
 /// with fields of agent types. It's often the case
 /// we want to implement `update` function that
 /// iterates over a heterogeneous set of agents,
-/// which this macro automates.
+/// which this macro automates. For example
+///
+/// ```no_rust
+/// #[derive(Agents)]
+/// struct SimAgents {
+///     a: AgentTypeA,
+///     b: AgentTypeB,
+/// }
+/// ```
+///
+/// expands to
+///
+/// ```no_rust
+/// struct SimAgents {
+///     a: AgentTypeA,
+///     b: AgentTypeB,
+/// }
+///
+/// impl AgentSet for SimAgents {
+///     fn update<R: RngCore>(
+///         &mut self, env: &mut Env, rng: &mut R
+///     ) {
+///         self.a.update(env, rng);
+///         self.b.update(env, rng);
+///     }
+/// }
+/// ```
 ///
 #[proc_macro_derive(Agents)]
 pub fn agents_derive(input: TokenStream) -> TokenStream {
