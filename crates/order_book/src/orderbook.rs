@@ -1058,6 +1058,38 @@ mod tests {
     }
 
     #[test]
+    fn test_incorrect_price_err() {
+        let mut book = OrderBook::new(0, 2, true);
+
+        let res = book.create_order(Side::Ask, 100, 101, Some(51));
+
+        assert!(res.is_err_and(|e| matches!(
+            e,
+            OrderError::PriceError {
+                price: 51,
+                tick_size: 2
+            }
+        )));
+    }
+
+    #[test]
+    fn test_no_double_place() {
+        let mut book = OrderBook::new(0, 2, true);
+
+        let id = book.create_order(Side::Ask, 100, 101, Some(50)).unwrap();
+
+        book.place_order(id);
+
+        assert!(book.bid_ask() == (0, 50));
+        assert!(book.ask_best_vol_and_orders() == (100, 1));
+
+        book.place_order(id);
+
+        assert!(book.bid_ask() == (0, 50));
+        assert!(book.ask_best_vol_and_orders() == (100, 1));
+    }
+
+    #[test]
     fn test_serialisation() {
         use rand::{seq::SliceRandom, Rng};
         use rand_xoshiro::rand_core::SeedableRng;
