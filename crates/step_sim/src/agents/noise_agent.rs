@@ -133,7 +133,8 @@ impl Agent for NoiseAgent {
                         self.tick_size,
                         self.params.trade_vol,
                         *trader_id,
-                    ),
+                    )
+                    .unwrap(),
                     false => common::place_sell_limit_order(
                         env,
                         rng,
@@ -142,7 +143,8 @@ impl Agent for NoiseAgent {
                         self.tick_size,
                         self.params.trade_vol,
                         *trader_id,
-                    ),
+                    )
+                    .unwrap(),
                 };
                 live_orders.push(order_id);
             }
@@ -150,8 +152,12 @@ impl Agent for NoiseAgent {
             if rng.gen::<f32>() < self.params.p_market {
                 let side = rng.gen_bool(0.5);
                 match side {
-                    true => env.place_order(Side::Bid, self.params.trade_vol, *trader_id, None),
-                    false => env.place_order(Side::Ask, self.params.trade_vol, *trader_id, None),
+                    true => env
+                        .place_order(Side::Bid, self.params.trade_vol, *trader_id, None)
+                        .unwrap(),
+                    false => env
+                        .place_order(Side::Ask, self.params.trade_vol, *trader_id, None)
+                        .unwrap(),
                 };
             }
         }

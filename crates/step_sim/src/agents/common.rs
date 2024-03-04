@@ -5,7 +5,7 @@ use rand::{Rng, RngCore};
 use rand_distr::Distribution;
 
 use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
-use crate::Env;
+use crate::{Env, OrderError};
 
 /// Round a price up to the nearest tick and cast to a [Price]
 ///
@@ -99,7 +99,7 @@ pub fn place_buy_limit_order<R: RngCore, D: Distribution<f64>>(
     tick_size: f64,
     trade_vol: Vol,
     trader_id: TraderId,
-) -> OrderId {
+) -> Result<OrderId, OrderError> {
     let dist = price_dist.sample(rng).abs();
     let price = mid_price - dist;
     let price = round_price_down(price, tick_size);
@@ -132,7 +132,7 @@ pub fn place_sell_limit_order<R: RngCore, D: Distribution<f64>>(
     tick_size: f64,
     trade_vol: Vol,
     trader_id: TraderId,
-) -> OrderId {
+) -> Result<OrderId, OrderError> {
     let dist = price_dist.sample(rng).abs();
     let price = mid_price + dist;
     let price = round_price_up(price, tick_size);
@@ -195,7 +195,7 @@ mod test {
         let ids: Vec<OrderId> = (0..10)
             .into_iter()
             .map(|x| {
-                env.place_order(Side::Bid, 100, 0, Some(50));
+                env.place_order(Side::Bid, 100, 0, Some(50)).unwrap();
                 x
             })
             .collect();

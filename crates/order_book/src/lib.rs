@@ -19,7 +19,7 @@
 //! // Create a new order
 //! let order_id = book.create_order(
 //!     types::Side::Bid, 50, 101, Some(50)
-//! );
+//! ).unwrap();
 //!
 //! // Place the order on the market
 //! book.place_order(order_id);
@@ -98,4 +98,4 @@ mod orderbook;
 mod side;
 pub mod types;
 
-pub use orderbook::OrderBook;
+pub use orderbook::{OrderBook, OrderError};

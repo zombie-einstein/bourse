@@ -9,7 +9,7 @@
 //! let mut book = bourse_book::OrderBook::new(0, 1, true);
 //! let order_id = book.create_order(
 //!     types::Side::Bid, 50, 101, Some(50)
-//! );
+//! ).unwrap();
 //! book.place_order(order_id);
 //! let (bid, ask) = book.bid_ask();
 //! book.cancel_order(order_id);
@@ -51,7 +51,7 @@ pub struct OrderEntry {
 /// let mut book = bourse_book::OrderBook::new(0, 1, true);
 /// let order_id = book.create_order(
 ///     types::Side::Bid, 50, 101, Some(50)
-/// );
+/// ).unwrap();
 /// book.place_order(order_id);
 /// let (bid, ask) = book.bid_ask();
 /// book.cancel_order(order_id);
@@ -85,6 +85,23 @@ pub struct OrderBook {
     /// executed (but orders can still be
     /// placed and modified)
     trading: bool,
+}
+
+#[derive(Debug, Clone)]
+pub enum OrderError {
+    PriceError { price: Price, tick_size: Price },
+}
+
+impl fmt::Display for OrderError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            OrderError::PriceError { price, tick_size } => write!(
+                f,
+                "Price {} was not a multiple of tick-size {}",
+                price, tick_size
+            ),
+        }
+    }
 }
 
 impl OrderBook {
@@ -227,13 +244,29 @@ impl OrderBook {
         vol: Vol,
         trader_id: TraderId,
         price: Option<Price>,
-    ) -> OrderId {
+    ) -> Result<OrderId, OrderError> {
         let order_id = self.current_order_id();
 
         let order = match (side, price) {
-            (Side::Bid, Some(p)) => Order::buy_limit(self.t, vol, p, trader_id, order_id),
+            (Side::Bid, Some(p)) => {
+                if p % self.tick_size != 0 {
+                    return Err(OrderError::PriceError {
+                        price: p,
+                        tick_size: self.tick_size,
+                    });
+                }
+                Order::buy_limit(self.t, vol, p, trader_id, order_id)
+            }
             (Side::Bid, None) => Order::buy_market(self.t, vol, trader_id, order_id),
-            (Side::Ask, Some(p)) => Order::sell_limit(self.t, vol, p, trader_id, order_id),
+            (Side::Ask, Some(p)) => {
+                if p % self.tick_size != 0 {
+                    return Err(OrderError::PriceError {
+                        price: p,
+                        tick_size: self.tick_size,
+                    });
+                }
+                Order::sell_limit(self.t, vol, p, trader_id, order_id)
+            }
             (Side::Ask, None) => Order::sell_market(self.t, vol, trader_id, order_id),
         };
 
@@ -244,7 +277,7 @@ impl OrderBook {
 
         self.orders.push(OrderEntry { order, key });
 
-        order_id
+        Ok(order_id)
     }
 
     /// Convenience function to create and immediately place an order
@@ -266,10 +299,10 @@ impl OrderBook {
         vol: Vol,
         trader_id: TraderId,
         price: Option<Price>,
-    ) -> OrderId {
-        let order_id = self.create_order(side, vol, trader_id, price);
+    ) -> Result<OrderId, OrderError> {
+        let order_id = self.create_order(side, vol, trader_id, price)?;
         self.place_order(order_id);
-        order_id
+        Ok(order_id)
     }
 
     /// Match an aggressive buy order
@@ -434,6 +467,10 @@ impl OrderBook {
     /// - `order_id` - Id of the order to place
     pub fn place_order(&mut self, order_id: OrderId) {
         let mut order_entry = self.orders[order_id];
+
+        if order_entry.order.status != Status::New {
+            return;
+        }
 
         order_entry.order.status = Status::Active;
         order_entry.order.arr_time = self.t;
@@ -787,8 +824,10 @@ mod tests {
     fn test_insert_order() {
         let mut book = OrderBook::new(0, 1, true);
 
-        book.create_and_place_order(Side::Ask, 10, 0, Some(100));
-        book.create_and_place_order(Side::Bid, 10, 0, Some(50));
+        book.create_and_place_order(Side::Ask, 10, 0, Some(100))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(50))
+            .unwrap();
 
         assert!(book.bid_ask() == (50, 100));
         assert!(book.ask_vol() == 10);
@@ -798,8 +837,10 @@ mod tests {
         assert!(book.ask_best_vol() == 10);
         assert!(book.ask_best_vol_and_orders() == (10, 1));
 
-        book.create_and_place_order(Side::Ask, 10, 0, Some(90));
-        book.create_and_place_order(Side::Bid, 10, 0, Some(60));
+        book.create_and_place_order(Side::Ask, 10, 0, Some(90))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(60))
+            .unwrap();
 
         assert!(book.bid_ask() == (60, 90));
         assert!(book.ask_vol() == 20);
@@ -809,8 +850,10 @@ mod tests {
         assert!(book.ask_best_vol() == 10);
         assert!(book.ask_best_vol_and_orders() == (10, 1));
 
-        book.create_and_place_order(Side::Ask, 10, 0, Some(110));
-        book.create_and_place_order(Side::Bid, 10, 0, Some(40));
+        book.create_and_place_order(Side::Ask, 10, 0, Some(110))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(40))
+            .unwrap();
 
         assert!(book.bid_ask() == (60, 90));
         assert!(book.ask_vol() == 30);
@@ -825,10 +868,14 @@ mod tests {
     fn test_cancel_order() {
         let mut book = OrderBook::new(0, 1, true);
 
-        book.create_and_place_order(Side::Ask, 10, 0, Some(100));
-        book.create_and_place_order(Side::Bid, 10, 0, Some(50));
-        book.create_and_place_order(Side::Ask, 10, 0, Some(90));
-        book.create_and_place_order(Side::Bid, 10, 0, Some(60));
+        book.create_and_place_order(Side::Ask, 10, 0, Some(100))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(50))
+            .unwrap();
+        book.create_and_place_order(Side::Ask, 10, 0, Some(90))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(60))
+            .unwrap();
 
         assert!(book.bid_ask() == (60, 90));
         assert!(book.ask_vol() == 20);
@@ -870,8 +917,10 @@ mod tests {
     fn test_mod_order_vol() {
         let mut book = OrderBook::new(0, 1, true);
 
-        book.create_and_place_order(Side::Ask, 10, 0, Some(100));
-        book.create_and_place_order(Side::Bid, 10, 0, Some(50));
+        book.create_and_place_order(Side::Ask, 10, 0, Some(100))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(50))
+            .unwrap();
 
         book.modify_order(0, None, Some(8));
         book.modify_order(1, None, Some(5));
@@ -891,8 +940,10 @@ mod tests {
     fn test_modify_order() {
         let mut book = OrderBook::new(0, 1, true);
 
-        book.create_and_place_order(Side::Ask, 10, 0, Some(100));
-        book.create_and_place_order(Side::Bid, 10, 0, Some(50));
+        book.create_and_place_order(Side::Ask, 10, 0, Some(100))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(50))
+            .unwrap();
 
         assert!(book.bid_ask() == (50, 100));
 
@@ -910,8 +961,10 @@ mod tests {
     fn test_modify_order_crossing() {
         let mut book = OrderBook::new(0, 1, true);
 
-        book.create_and_place_order(Side::Ask, 10, 0, Some(100));
-        book.create_and_place_order(Side::Bid, 10, 0, Some(50));
+        book.create_and_place_order(Side::Ask, 10, 0, Some(100))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(50))
+            .unwrap();
 
         assert!(book.bid_ask() == (50, 100));
 
@@ -934,10 +987,10 @@ mod tests {
     fn test_trades() {
         let mut book = OrderBook::new(0, 1, true);
 
-        book.create_order(Side::Ask, 101, 101, Some(20));
-        book.create_order(Side::Ask, 101, 101, Some(18));
-        book.create_order(Side::Bid, 202, 101, Some(12));
-        book.create_order(Side::Bid, 202, 101, Some(14));
+        book.create_order(Side::Ask, 101, 101, Some(20)).unwrap();
+        book.create_order(Side::Ask, 101, 101, Some(18)).unwrap();
+        book.create_order(Side::Bid, 202, 101, Some(12)).unwrap();
+        book.create_order(Side::Bid, 202, 101, Some(14)).unwrap();
 
         book.place_order(0);
         book.set_time(1);
@@ -948,7 +1001,7 @@ mod tests {
         book.place_order(3);
         book.set_time(4);
 
-        book.create_order(Side::Bid, 102, 101, None);
+        book.create_order(Side::Bid, 102, 101, None).unwrap();
         book.place_order(4);
 
         assert!(book.ask_vol() == 100);
@@ -961,7 +1014,7 @@ mod tests {
         assert!(book.trades[1].vol == 1);
         assert!(book.get_trade_vol() == 102);
 
-        book.create_order(Side::Ask, 204, 101, Some(14));
+        book.create_order(Side::Ask, 204, 101, Some(14)).unwrap();
         book.place_order(5);
 
         assert!(book.bid_vol() == 202);
@@ -980,7 +1033,8 @@ mod tests {
     fn test_market_order_no_trading() {
         let mut book = OrderBook::new(0, 1, false);
 
-        book.create_and_place_order(Side::Bid, 101, 101, None);
+        book.create_and_place_order(Side::Bid, 101, 101, None)
+            .unwrap();
 
         assert!(book.bid_ask() == (0, Price::MAX));
         assert!(book.bid_vol() == 0);
@@ -992,8 +1046,10 @@ mod tests {
     fn test_unfilled_market_order() {
         let mut book = OrderBook::new(0, 1, true);
 
-        book.create_and_place_order(Side::Ask, 10, 101, Some(50));
-        book.create_and_place_order(Side::Bid, 20, 101, None);
+        book.create_and_place_order(Side::Ask, 10, 101, Some(50))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 20, 101, None)
+            .unwrap();
 
         assert!(book.bid_ask() == (0, Price::MAX));
         assert!(book.bid_vol() == 0);
@@ -1015,7 +1071,8 @@ mod tests {
             let side = [Side::Bid, Side::Ask].choose(&mut rng).unwrap();
             let price = rng.gen_range(20..40);
             let vol = rng.gen_range(5..20);
-            book.create_and_place_order(*side, vol, 0, Some(price));
+            book.create_and_place_order(*side, vol, 0, Some(price))
+                .unwrap();
             book.set_time(i);
         }
 

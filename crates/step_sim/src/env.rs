@@ -7,7 +7,7 @@
 use bourse_book::types::{
     Event, Nanos, Order, OrderCount, OrderId, Price, Side, Status, Trade, TraderId, Vol,
 };
-use bourse_book::OrderBook;
+use bourse_book::{OrderBook, OrderError};
 use rand::seq::SliceRandom;
 use rand::RngCore;
 use std::mem;
@@ -170,10 +170,10 @@ impl Env {
         vol: Vol,
         trader_id: TraderId,
         price: Option<Price>,
-    ) -> OrderId {
-        let order_id = self.order_book.create_order(side, vol, trader_id, price);
+    ) -> Result<OrderId, OrderError> {
+        let order_id = self.order_book.create_order(side, vol, trader_id, price)?;
         self.transactions.push(Event::New { order_id });
-        order_id
+        Ok(order_id)
     }
 
     /// Submit an instruction to cancel an order
@@ -299,8 +299,8 @@ mod tests {
         let mut env = Env::new(0, 1, step_size, true);
         let mut rng = Rng::seed_from_u64(101);
 
-        env.place_order(Side::Bid, 10, 101, Some(10));
-        env.place_order(Side::Ask, 20, 101, Some(20));
+        env.place_order(Side::Bid, 10, 101, Some(10)).unwrap();
+        env.place_order(Side::Ask, 20, 101, Some(20)).unwrap();
 
         env.step(&mut rng);
 
@@ -311,8 +311,8 @@ mod tests {
         assert!(env.get_orderbook().get_orders()[1].status == Status::Active);
         assert!(env.get_orderbook().get_time() == step_size);
 
-        env.place_order(Side::Bid, 10, 101, Some(11));
-        env.place_order(Side::Ask, 20, 101, Some(21));
+        env.place_order(Side::Bid, 10, 101, Some(11)).unwrap();
+        env.place_order(Side::Ask, 20, 101, Some(21)).unwrap();
 
         env.step(&mut rng);
 
@@ -320,7 +320,7 @@ mod tests {
         assert!(env.get_orderbook().get_orders().len() == 4);
         assert!(env.get_orderbook().get_time() == 2 * step_size);
 
-        env.place_order(Side::Bid, 30, 101, None);
+        env.place_order(Side::Bid, 30, 101, None).unwrap();
 
         env.step(&mut rng);
 

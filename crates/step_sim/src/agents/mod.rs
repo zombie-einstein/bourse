@@ -151,7 +151,8 @@ mod tests {
 
     impl Agent for TestAgent {
         fn update<R: RngCore>(&mut self, env: &mut Env, _rng: &mut R) {
-            env.place_order(self.side, 10, 101, Some(self.price));
+            env.place_order(self.side, 10, 101, Some(self.price))
+                .unwrap();
         }
     }
 

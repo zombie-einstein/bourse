@@ -134,6 +134,6 @@ pub mod agents;
 mod env;
 mod runner;
 
-pub use bourse_book::types;
+pub use bourse_book::{types, OrderError};
 pub use env::Env;
 pub use runner::sim_runner;

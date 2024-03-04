@@ -90,12 +90,15 @@ impl Agent for RandomAgents {
                             let side = [Side::Ask, Side::Bid].choose(rng).unwrap();
                             let tick = rng.gen_range(self.tick_range.0..self.tick_range.1);
                             let vol = rng.gen_range(self.vol_range.0..self.vol_range.1);
-                            Some(env.place_order(
-                                *side,
-                                vol,
-                                TraderId::try_from(n).unwrap(),
-                                Some(tick * self.tick_size),
-                            ))
+                            Some(
+                                env.place_order(
+                                    *side,
+                                    vol,
+                                    TraderId::try_from(n).unwrap(),
+                                    Some(tick * self.tick_size),
+                                )
+                                .unwrap(),
+                            )
                         }
                     }
                     false => *i,

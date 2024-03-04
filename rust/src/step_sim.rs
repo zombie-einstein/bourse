@@ -4,6 +4,7 @@ use super::types::{cast_order, cast_trade, status_to_int, PyOrder, PyTrade};
 use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_de::Env as BaseEnv;
 use numpy::{PyArray1, ToPyArray};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use rand_xoshiro::rand_core::SeedableRng;
 use rand_xoshiro::Xoroshiro128StarStar;
@@ -230,7 +231,11 @@ impl StepEnv {
             false => Side::Ask,
         };
         let order_id = self.env.place_order(side, vol, trader_id, price);
-        Ok(order_id)
+
+        match order_id {
+            Ok(i) => Ok(i),
+            Err(e) => Err(PyValueError::new_err(e.to_string())),
+        }
     }
 
     /// cancel_order(order_id: int)

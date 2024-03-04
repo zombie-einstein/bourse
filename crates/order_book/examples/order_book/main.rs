@@ -3,10 +3,14 @@ use bourse_book::{types, OrderBook};
 fn main() {
     let mut book = OrderBook::new(0, 1, true);
 
-    book.create_and_place_order(types::Side::Ask, 20, 0, Some(60));
-    book.create_and_place_order(types::Side::Ask, 20, 0, Some(65));
-    book.create_and_place_order(types::Side::Bid, 10, 0, Some(50));
-    book.create_and_place_order(types::Side::Bid, 10, 0, Some(45));
+    book.create_and_place_order(types::Side::Ask, 20, 0, Some(60))
+        .unwrap();
+    book.create_and_place_order(types::Side::Ask, 20, 0, Some(65))
+        .unwrap();
+    book.create_and_place_order(types::Side::Bid, 10, 0, Some(50))
+        .unwrap();
+    book.create_and_place_order(types::Side::Bid, 10, 0, Some(45))
+        .unwrap();
 
     let (bid, ask) = book.bid_ask();
 
@@ -18,7 +22,7 @@ fn main() {
         book.ask_vol()
     );
 
-    let id_e = book.create_order(types::Side::Ask, 15, 99, None);
+    let id_e = book.create_order(types::Side::Ask, 15, 99, None).unwrap();
 
     book.set_time(10);
     book.place_order(id_e);
