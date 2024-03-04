@@ -37,9 +37,9 @@ pub struct OrderBook(BaseOrderBook);
 #[pymethods]
 impl OrderBook {
     #[new]
-    #[pyo3(signature = (start_time, trading=true))]
-    pub fn new(start_time: Nanos, trading: bool) -> PyResult<Self> {
-        let inner = BaseOrderBook::new(start_time, trading);
+    #[pyo3(signature = (start_time, tick_size, trading=true))]
+    pub fn new(start_time: Nanos, tick_size: Price, trading: bool) -> PyResult<Self> {
+        let inner = BaseOrderBook::new(start_time, tick_size, trading);
         Ok(Self(inner))
     }
 

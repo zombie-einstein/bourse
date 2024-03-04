@@ -163,7 +163,7 @@ mod tests {
             pub b: TestAgent,
         }
 
-        let mut env = Env::new(0, 1000, true);
+        let mut env = Env::new(0, 1, 1000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let mut test_agents = TestAgents {

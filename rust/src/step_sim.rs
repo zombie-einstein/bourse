@@ -31,10 +31,11 @@ use rand_xoshiro::Xoroshiro128StarStar;
 ///
 ///    seed = 101
 ///    start_time = 0
+///    tick_size = 1
 ///    step_size = 1000
 ///
 ///    env = bourse.core.StepEnv(
-///        seed, start_time, step_size
+///        seed, start_time, tick_size, step_size
 ///    )
 ///
 ///    # Create an order to be placed in the
@@ -58,9 +59,15 @@ pub struct StepEnv {
 #[pymethods]
 impl StepEnv {
     #[new]
-    #[pyo3(signature = (seed, start_time, step_size, trading=true))]
-    pub fn new(seed: u64, start_time: Nanos, step_size: Nanos, trading: bool) -> PyResult<Self> {
-        let env = BaseEnv::new(start_time, step_size, trading);
+    #[pyo3(signature = (seed, start_time, tick_size, step_size, trading=true))]
+    pub fn new(
+        seed: u64,
+        start_time: Nanos,
+        tick_size: Price,
+        step_size: Nanos,
+        trading: bool,
+    ) -> PyResult<Self> {
+        let env = BaseEnv::new(start_time, tick_size, step_size, trading);
         let rng = Xoroshiro128StarStar::seed_from_u64(seed);
         Ok(Self { env, rng })
     }

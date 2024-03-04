@@ -5,7 +5,7 @@ import bourse
 
 def test_step_sim_env():
 
-    env = bourse.core.StepEnv(101, 0, 100_000)
+    env = bourse.core.StepEnv(101, 0, 1, 100_000)
 
     env.place_order(True, 100, 101, price=50)
     env.place_order(False, 100, 101, price=60)
@@ -120,7 +120,7 @@ def test_runner():
             env.place_order(self.side, 10, 101, price=new_price)
             self.step += 1
 
-    env = bourse.core.StepEnv(101, 0, 100_000)
+    env = bourse.core.StepEnv(101, 0, 1, 100_000)
     agents = [TestAgent(True, 10), TestAgent(False, 50)]
 
     data = bourse.step_sim.run(env, agents, 10, 101)

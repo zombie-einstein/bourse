@@ -43,7 +43,7 @@ pub struct NoiseAgentParams {
 ///     pub a: NoiseAgent,
 /// }
 ///
-/// let mut env = Env::new(0, 1_000_000, true);
+/// let mut env = Env::new(0, 1, 1_000_000, true);
 ///
 /// let params = NoiseAgentParams{
 ///     tick_size: 2,
@@ -187,7 +187,7 @@ mod tests {
 
     #[test]
     fn test_place_and_cancel_limit_orders() {
-        let mut env = Env::new(0, 1_000_000, true);
+        let mut env = Env::new(0, 1, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let params = NoiseAgentParams {

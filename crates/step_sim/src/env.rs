@@ -28,7 +28,7 @@ use std::mem;
 /// use rand_xoshiro::Xoroshiro128StarStar;
 /// use rand_xoshiro::rand_core::SeedableRng;
 ///
-/// let mut env = bourse_de::Env::new(0, 1_000, true);
+/// let mut env = bourse_de::Env::new(0, 1, 1_000, true);
 /// let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 ///
 /// // Submit a new order instruction
@@ -71,10 +71,10 @@ impl Env {
     /// - `trading` - Flag if `true` orders will be matched,
     ///   otherwise no trades will take place
     ///
-    pub fn new(start_time: Nanos, step_size: Nanos, trading: bool) -> Self {
+    pub fn new(start_time: Nanos, tick_size: Price, step_size: Nanos, trading: bool) -> Self {
         Self {
             step_size,
-            order_book: OrderBook::new(start_time, trading),
+            order_book: OrderBook::new(start_time, tick_size, trading),
             prices: (Vec::new(), Vec::new()),
             volumes: (Vec::new(), Vec::new()),
             touch_order_counts: (Vec::new(), Vec::new()),
@@ -296,7 +296,7 @@ mod tests {
     #[test]
     fn test_env() {
         let step_size: Nanos = 1000;
-        let mut env = Env::new(0, step_size, true);
+        let mut env = Env::new(0, 1, step_size, true);
         let mut rng = Rng::seed_from_u64(101);
 
         env.place_order(Side::Bid, 10, 101, Some(10));

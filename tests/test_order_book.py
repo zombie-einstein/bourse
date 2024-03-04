@@ -2,7 +2,7 @@ import bourse
 
 
 def test_order_book_init():
-    ob = bourse.core.OrderBook(0)
+    ob = bourse.core.OrderBook(0, 1)
 
     assert ob.bid_ask() == (0, bourse.MAX_PRICE)
     assert ob.bid_vol() == 0
@@ -14,7 +14,7 @@ def test_order_book_init():
 
 
 def test_place_order():
-    ob = bourse.core.OrderBook(0)
+    ob = bourse.core.OrderBook(0, 1)
 
     ob.place_order(True, 10, 11, price=50)
     ob.place_order(False, 20, 12, price=60)
@@ -40,7 +40,7 @@ def test_place_order():
 
 
 def test_cancel_order():
-    ob = bourse.core.OrderBook(0)
+    ob = bourse.core.OrderBook(0, 1)
 
     id_0 = ob.place_order(True, 10, 11, price=50)
     id_1 = ob.place_order(False, 20, 12, price=60)
@@ -77,7 +77,7 @@ def test_cancel_order():
 
 
 def test_trades():
-    ob = bourse.core.OrderBook(0)
+    ob = bourse.core.OrderBook(0, 1)
 
     _ = ob.place_order(True, 10, 11, price=50)
     id_1 = ob.place_order(False, 20, 12, price=60)
@@ -125,7 +125,7 @@ def test_trades():
 
 def test_mod_order_volume():
 
-    ob = bourse.core.OrderBook(0)
+    ob = bourse.core.OrderBook(0, 1)
 
     _ = ob.place_order(True, 10, 11, price=50)
     id_1 = ob.place_order(True, 10, 11, price=55)
@@ -144,7 +144,7 @@ def test_mod_order_volume():
 
 def test_modify_order():
 
-    ob = bourse.core.OrderBook(0)
+    ob = bourse.core.OrderBook(0, 1)
 
     a = ob.place_order(True, 10, 11, price=50)
     _ = ob.place_order(False, 30, 11, price=60)
@@ -159,7 +159,7 @@ def test_modify_order():
 
 def test_get_orders():
 
-    ob = bourse.core.OrderBook(0)
+    ob = bourse.core.OrderBook(0, 1)
 
     ob.place_order(True, 10, 11, price=50)
     ob.place_order(False, 20, 12, price=60)
@@ -177,7 +177,7 @@ def test_get_orders():
 
 def test_read_write_snapshot(tmp_path):
 
-    ob = bourse.core.OrderBook(0)
+    ob = bourse.core.OrderBook(0, 1)
 
     ob.place_order(True, 10, 11, price=50)
     ob.place_order(False, 20, 12, price=60)

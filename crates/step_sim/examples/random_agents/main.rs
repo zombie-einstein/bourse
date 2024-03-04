@@ -9,7 +9,7 @@ struct SimAgents {
 }
 
 pub fn main() {
-    let mut env = Env::new(0, 1_000_000, true);
+    let mut env = Env::new(0, 1, 1_000_000, true);
 
     let mut agents = SimAgents {
         a: RandomAgents::new(50, (40, 60), (10, 20), 2, 0.8),

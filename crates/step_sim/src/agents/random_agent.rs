@@ -38,7 +38,7 @@ use rand::RngCore;
 ///     pub a: RandomAgents,
 /// }
 ///
-/// let mut env = Env::new(0, 1_000_000, true);
+/// let mut env = Env::new(0, 1, 1_000_000, true);
 ///
 /// let mut agents = SimAgents {
 ///     a: RandomAgents::new(10, (40, 60), (10, 20), 2, 0.8),
@@ -116,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_activity_rate() {
-        let mut env = Env::new(0, 1000, true);
+        let mut env = Env::new(0, 1, 1000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let mut agents = RandomAgents::new(2, (10, 20), (20, 30), 1, 0.0);
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_order_place_then_cancel() {
-        let mut env = Env::new(0, 1000, true);
+        let mut env = Env::new(0, 1, 1000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let mut agents = RandomAgents::new(1, (10, 20), (20, 30), 1, 1.0);

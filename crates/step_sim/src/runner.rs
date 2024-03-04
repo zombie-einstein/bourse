@@ -27,7 +27,7 @@ use rand_xoshiro::Xoroshiro128StarStar;
 ///     ) {}
 /// }
 ///
-/// let mut env = bourse_de::Env::new(0, 1_000, true);
+/// let mut env = bourse_de::Env::new(0, 1, 1_000, true);
 /// let mut agents = Agents{};
 ///
 /// // Run for 100 steps from seed 101

@@ -189,7 +189,7 @@ mod test {
 
     #[test]
     fn test_cancel_orders() {
-        let mut env = Env::new(0, 1_000_000, true);
+        let mut env = Env::new(0, 1, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let ids: Vec<OrderId> = (0..10)
@@ -213,7 +213,7 @@ mod test {
 
     #[test]
     fn test_placing_orders() {
-        let mut env = Env::new(0, 1_000_000, true);
+        let mut env = Env::new(0, 1, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
         let price_dist = Uniform::<f64>::new(-100.0, 100.0);
         let mid_price: f64 = 200.0;

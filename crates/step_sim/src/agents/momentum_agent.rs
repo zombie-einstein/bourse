@@ -78,7 +78,7 @@ pub struct MomentumParams {
 ///     pub a: MomentumAgent,
 /// }
 ///
-/// let mut env = Env::new(0, 1_000_000, true);
+/// let mut env = Env::new(0, 1, 1_000_000, true);
 ///
 /// let params = MomentumParams {
 ///     tick_size: 2,
@@ -209,7 +209,7 @@ mod tests {
 
     #[test]
     fn test_init_and_no_order() {
-        let mut env = Env::new(0, 1_000_000, true);
+        let mut env = Env::new(0, 1, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         env.place_order(Side::Bid, 100, 0, Some(1000));
