@@ -20,11 +20,10 @@ use std::cmp::min;
 use std::fmt;
 use std::path::Path;
 
-use crate::types::Status;
-
 use super::side::{get_ask_key, get_bid_key, AskSide, BidSide, SideFunctionality};
 use super::types::{
-    Event, Nanos, Order, OrderCount, OrderId, OrderKey, Price, Side, Trade, TraderId, Vol,
+    Event, Level1Data, Level2Data, Nanos, Order, OrderCount, OrderId, OrderKey, Price, Side,
+    Status, Trade, TraderId, Vol,
 };
 
 /// Order data combined with key
@@ -188,8 +187,9 @@ impl<const N: usize> OrderBook<N> {
     pub fn ask_levels(&self) -> [(Vol, OrderCount); N] {
         let start = self.bid_ask().1;
         core::array::from_fn(|i| {
-            self.ask_side
-                .vol_and_orders_at_price(start + Price::try_from(i).unwrap() * self.tick_size)
+            self.ask_side.vol_and_orders_at_price(
+                start.wrapping_add(Price::try_from(i).unwrap() * self.tick_size),
+            )
         })
     }
 
@@ -215,8 +215,9 @@ impl<const N: usize> OrderBook<N> {
     pub fn bid_levels(&self) -> [(Vol, OrderCount); N] {
         let start = self.bid_ask().0;
         core::array::from_fn(|i| {
-            self.bid_side
-                .vol_and_orders_at_price(start - Price::try_from(i).unwrap() * self.tick_size)
+            self.bid_side.vol_and_orders_at_price(
+                start.wrapping_sub(Price::try_from(i).unwrap() * self.tick_size),
+            )
         })
     }
 
@@ -230,6 +231,54 @@ impl<const N: usize> OrderBook<N> {
         let (bid, ask) = self.bid_ask();
         let spread = ask - bid;
         f64::from(bid) + 0.5 * f64::from(spread)
+    }
+
+    /// Get current level 1 market data
+    ///
+    /// Returns level 1 data which includes
+    ///
+    /// - Best bid and ask prices
+    /// - Total bid and ask side volumes
+    /// - Bid and ask volumes at the touch
+    /// - Number of bid and ask orders at the touch
+    ///
+    pub fn level_1_data(&self) -> Level1Data {
+        let (bid_price, ask_price) = self.bid_ask();
+        let (bid_touch_vol, bid_touch_orders) = self.bid_best_vol_and_orders();
+        let (ask_touch_vol, ask_touch_orders) = self.ask_best_vol_and_orders();
+        Level1Data {
+            bid_price,
+            ask_price,
+            bid_vol: self.bid_vol(),
+            ask_vol: self.ask_vol(),
+            bid_touch_vol,
+            ask_touch_vol,
+            bid_touch_orders,
+            ask_touch_orders,
+        }
+    }
+
+    /// Get current level 2 market data
+    ///
+    /// In this case level 2 data contains
+    /// additional order information at a fixed number
+    /// of ticks from the best price
+    ///
+    /// - Best bid and ask prices
+    /// - Total bid and ask volumes
+    /// - Volume and number of orders at N levels (ticks)
+    ///   above/below the bid ask (where N is 10 by default)
+    ///
+    pub fn level_2_data(&self) -> Level2Data<N> {
+        let (bid_price, ask_price) = self.bid_ask();
+        Level2Data {
+            bid_price,
+            ask_price,
+            bid_vol: self.bid_vol(),
+            ask_vol: self.ask_vol(),
+            bid_price_levels: self.bid_levels(),
+            ask_price_levels: self.ask_levels(),
+        }
     }
 
     /// Get the next order-id in the sequence
@@ -892,6 +941,16 @@ mod tests {
     fn test_level_data() {
         let mut book = OrderBook::<4>::new(0, 2, true);
 
+        let bid_levels = book.bid_levels();
+
+        assert!(bid_levels.len() == 4);
+        assert!(bid_levels == [(0, 0), (0, 0), (0, 0), (0, 0)]);
+
+        let ask_levels = book.ask_levels();
+
+        assert!(ask_levels.len() == 4);
+        assert!(ask_levels == [(0, 0), (0, 0), (0, 0), (0, 0)]);
+
         book.create_and_place_order(Side::Bid, 10, 0, Some(100))
             .unwrap();
         book.create_and_place_order(Side::Bid, 10, 0, Some(100))
@@ -919,6 +978,32 @@ mod tests {
 
         assert!(ask_levels.len() == 4);
         assert!(ask_levels == [(22, 2), (13, 1), (0, 0), (15, 1)]);
+
+        assert!(matches!(
+            book.level_1_data(),
+            Level1Data {
+                bid_price: 100,
+                ask_price: 102,
+                bid_vol: 46,
+                ask_vol: 50,
+                bid_touch_vol: 20,
+                ask_touch_vol: 22,
+                bid_touch_orders: 2,
+                ask_touch_orders: 2,
+            }
+        ));
+
+        assert!(matches!(
+            book.level_2_data(),
+            Level2Data {
+                bid_price: 100,
+                ask_price: 102,
+                bid_vol: 46,
+                ask_vol: 50,
+                bid_price_levels: [(20, 2), (12, 1), (0, 0), (14, 1)],
+                ask_price_levels: [(22, 2), (13, 1), (0, 0), (15, 1)],
+            }
+        ));
     }
 
     #[test]
@@ -964,10 +1049,10 @@ mod tests {
         assert!(book.bid_best_vol_and_orders() == (0, 0));
         assert!(book.ask_best_vol_and_orders() == (0, 0));
 
-        matches!(book.orders[0].order.status, Status::Cancelled);
-        matches!(book.orders[1].order.status, Status::Cancelled);
-        matches!(book.orders[2].order.status, Status::Cancelled);
-        matches!(book.orders[3].order.status, Status::Cancelled);
+        assert!(matches!(book.orders[0].order.status, Status::Cancelled));
+        assert!(matches!(book.orders[1].order.status, Status::Cancelled));
+        assert!(matches!(book.orders[2].order.status, Status::Cancelled));
+        assert!(matches!(book.orders[3].order.status, Status::Cancelled));
     }
 
     #[test]
