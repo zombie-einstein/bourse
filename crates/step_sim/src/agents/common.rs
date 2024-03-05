@@ -226,13 +226,13 @@ mod test {
 
         let buy_order = env.get_orders()[0];
 
-        matches!(buy_order.side, Side::Bid);
+        assert!(matches!(buy_order.side, Side::Bid));
         assert!(buy_order.price % 5 == 0);
         assert!(buy_order.price <= 200);
 
         let sell_order = env.get_orders()[1];
 
-        matches!(sell_order.side, Side::Ask);
+        assert!(matches!(sell_order.side, Side::Ask));
         assert!(sell_order.price % 5 == 0);
         assert!(sell_order.price >= 200);
     }

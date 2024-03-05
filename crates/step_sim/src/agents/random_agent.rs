@@ -141,20 +141,23 @@ mod tests {
 
         agents.update(&mut env, &mut rng);
         assert!(env.get_transactions().len() == 1);
-        matches!(env.get_transactions()[0], Event::New { .. });
+        assert!(matches!(env.get_transactions()[0], Event::New { .. }));
         assert!(agents.orders == vec![Some(0)]);
 
         env.step(&mut rng);
 
         agents.update(&mut env, &mut rng);
         assert!(env.get_transactions().len() == 1);
-        matches!(env.get_transactions()[0], Event::Cancellation { .. });
+        assert!(matches!(
+            env.get_transactions()[0],
+            Event::Cancellation { .. }
+        ));
 
         env.step(&mut rng);
 
         agents.update(&mut env, &mut rng);
         assert!(env.get_transactions().len() == 1);
-        matches!(env.get_transactions()[0], Event::New { .. });
+        assert!(matches!(env.get_transactions()[0], Event::New { .. }));
         assert!(agents.orders == vec![Some(1)]);
     }
 }
