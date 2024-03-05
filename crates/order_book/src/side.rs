@@ -28,7 +28,7 @@ pub trait SideFunctionality {
     /// Get the id of the highest priority order
     fn best_order_idx(&self) -> Option<OrderId>;
     /// Get the volume and orders at a price level
-    fn vol_and_orders_at_price(&self, price: &Price) -> (Vol, OrderCount);
+    fn vol_and_orders_at_price(&self, price: Price) -> (Vol, OrderCount);
 }
 
 /// Order book side data structure
@@ -135,8 +135,8 @@ impl OrderBookSide {
     ///
     /// - `price` - Price level to retrieve data for
     ///
-    fn vol_and_orders_at_price(&self, price: &Price) -> (Vol, OrderCount) {
-        match self.volumes.get(price) {
+    fn vol_and_orders_at_price(&self, price: Price) -> (Vol, OrderCount) {
+        match self.volumes.get(&price) {
             Some(x) => *x,
             None => (0, 0),
         }
@@ -215,7 +215,8 @@ impl SideFunctionality for BidSide {
         self.0.best_order_idx()
     }
 
-    fn vol_and_orders_at_price(&self, price: &Price) -> (Vol, OrderCount) {
+    fn vol_and_orders_at_price(&self, price: Price) -> (Vol, OrderCount) {
+        let price = Price::MAX - price;
         self.0.vol_and_orders_at_price(price)
     }
 }
@@ -284,7 +285,7 @@ impl SideFunctionality for AskSide {
         self.0.best_order_idx()
     }
 
-    fn vol_and_orders_at_price(&self, price: &Price) -> (Vol, OrderCount) {
+    fn vol_and_orders_at_price(&self, price: Price) -> (Vol, OrderCount) {
         self.0.vol_and_orders_at_price(price)
     }
 }
@@ -462,8 +463,8 @@ mod tests {
         side.insert_order(get_ask_key(1, 100), 2, 20);
         side.insert_order(get_ask_key(1, 101), 3, 40);
 
-        assert!(side.vol_and_orders_at_price(&100) == (30, 2));
-        assert!(side.vol_and_orders_at_price(&101) == (40, 1));
-        assert!(side.vol_and_orders_at_price(&102) == (0, 0));
+        assert!(side.vol_and_orders_at_price(100) == (30, 2));
+        assert!(side.vol_and_orders_at_price(101) == (40, 1));
+        assert!(side.vol_and_orders_at_price(102) == (0, 0));
     }
 }

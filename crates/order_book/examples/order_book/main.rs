@@ -1,7 +1,7 @@
 use bourse_book::{types, OrderBook};
 
 fn main() {
-    let mut book = OrderBook::new(0, 1, true);
+    let mut book: OrderBook = OrderBook::new(0, 1, true);
 
     book.create_and_place_order(types::Side::Ask, 20, 0, Some(60))
         .unwrap();

@@ -4,9 +4,9 @@
 //!
 //! ```
 //! use bourse_book;
-//! use bourse_book::types;
+//! use bourse_book::{types, OrderBook};
 //!
-//! let mut book = bourse_book::OrderBook::new(0, 1, true);
+//! let mut book: OrderBook  = OrderBook::new(0, 1, true);
 //! let order_id = book.create_order(
 //!     types::Side::Bid, 50, 101, Some(50)
 //! ).unwrap();
@@ -46,9 +46,9 @@ pub struct OrderEntry {
 ///
 /// ```
 /// use bourse_book;
-/// use bourse_book::types;
+/// use bourse_book::{types, OrderBook};
 ///
-/// let mut book = bourse_book::OrderBook::new(0, 1, true);
+/// let mut book: OrderBook = OrderBook::new(0, 1, true);
 /// let order_id = book.create_order(
 ///     types::Side::Bid, 50, 101, Some(50)
 /// ).unwrap();
@@ -58,8 +58,8 @@ pub struct OrderEntry {
 /// ```
 ///
 #[derive(Serialize, Deserialize)]
-#[serde(try_from = "OrderBookState")]
-pub struct OrderBook {
+#[serde(try_from = "OrderBookState<N>")]
+pub struct OrderBook<const N: usize = 10> {
     /// Simulated time, intended to represent
     /// nano-seconds, but arbitrary units can
     /// be used without effecting functionality
@@ -104,7 +104,7 @@ impl fmt::Display for OrderError {
     }
 }
 
-impl OrderBook {
+impl<const N: usize> OrderBook<N> {
     /// Initialise a new orderbook
     ///
     /// Creates a new order empty order book (
@@ -181,6 +181,18 @@ impl OrderBook {
         self.ask_side.best_vol_and_orders()
     }
 
+    /// Get volumes and number of orders at N price levels
+    ///
+    /// Returns an array of tuples containing the volume and
+    /// number of orders at each price level from the touch.
+    pub fn ask_levels(&self) -> [(Vol, OrderCount); N] {
+        let start = self.bid_ask().1;
+        core::array::from_fn(|i| {
+            self.ask_side
+                .vol_and_orders_at_price(start + Price::try_from(i).unwrap() * self.tick_size)
+        })
+    }
+
     /// Get the current total bid volume
     pub fn bid_vol(&self) -> Vol {
         self.bid_side.vol()
@@ -194,6 +206,18 @@ impl OrderBook {
     /// Get the current touch bid volume and order count
     pub fn bid_best_vol_and_orders(&self) -> (Vol, OrderCount) {
         self.bid_side.best_vol_and_orders()
+    }
+
+    /// Get volumes and number of orders at N price levels
+    ///
+    /// Returns an array of tuples containing the volume and
+    /// number of orders at each price level from the touch.
+    pub fn bid_levels(&self) -> [(Vol, OrderCount); N] {
+        let start = self.bid_ask().0;
+        core::array::from_fn(|i| {
+            self.bid_side
+                .vol_and_orders_at_price(start - Price::try_from(i).unwrap() * self.tick_size)
+        })
     }
 
     /// Get current bid-ask price
@@ -756,7 +780,7 @@ fn match_orders(
 
 /// Dummy order book to enable deserialization
 #[derive(Deserialize)]
-struct OrderBookState {
+struct OrderBookState<const N: usize = 10> {
     t: Nanos,
     tick_size: Price,
     trade_vol: Vol,
@@ -773,10 +797,10 @@ impl fmt::Display for OrderBookConversionErrror {
     }
 }
 
-impl std::convert::TryFrom<OrderBookState> for OrderBook {
+impl<const N: usize> std::convert::TryFrom<OrderBookState<N>> for OrderBook<{ N }> {
     type Error = OrderBookConversionErrror;
 
-    fn try_from(state: OrderBookState) -> Result<Self, Self::Error> {
+    fn try_from(state: OrderBookState<N>) -> Result<Self, Self::Error> {
         let mut bid_side = BidSide::default();
         let mut ask_side = AskSide::default();
 
@@ -809,7 +833,7 @@ mod tests {
 
     #[test]
     fn test_init() {
-        let book = OrderBook::new(0, 1, true);
+        let book: OrderBook = OrderBook::new(0, 1, true);
 
         assert!(book.bid_vol() == 0);
         assert!(book.ask_vol() == 0);
@@ -822,7 +846,7 @@ mod tests {
 
     #[test]
     fn test_insert_order() {
-        let mut book = OrderBook::new(0, 1, true);
+        let mut book: OrderBook = OrderBook::new(0, 1, true);
 
         book.create_and_place_order(Side::Ask, 10, 0, Some(100))
             .unwrap();
@@ -865,8 +889,41 @@ mod tests {
     }
 
     #[test]
+    fn test_level_data() {
+        let mut book = OrderBook::<4>::new(0, 2, true);
+
+        book.create_and_place_order(Side::Bid, 10, 0, Some(100))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 10, 0, Some(100))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 12, 0, Some(98))
+            .unwrap();
+        book.create_and_place_order(Side::Bid, 14, 0, Some(94))
+            .unwrap();
+
+        book.create_and_place_order(Side::Ask, 11, 0, Some(102))
+            .unwrap();
+        book.create_and_place_order(Side::Ask, 11, 0, Some(102))
+            .unwrap();
+        book.create_and_place_order(Side::Ask, 13, 0, Some(104))
+            .unwrap();
+        book.create_and_place_order(Side::Ask, 15, 0, Some(108))
+            .unwrap();
+
+        let bid_levels = book.bid_levels();
+
+        assert!(bid_levels.len() == 4);
+        assert!(bid_levels == [(20, 2), (12, 1), (0, 0), (14, 1)]);
+
+        let ask_levels = book.ask_levels();
+
+        assert!(ask_levels.len() == 4);
+        assert!(ask_levels == [(22, 2), (13, 1), (0, 0), (15, 1)]);
+    }
+
+    #[test]
     fn test_cancel_order() {
-        let mut book = OrderBook::new(0, 1, true);
+        let mut book: OrderBook = OrderBook::new(0, 1, true);
 
         book.create_and_place_order(Side::Ask, 10, 0, Some(100))
             .unwrap();
@@ -915,7 +972,7 @@ mod tests {
 
     #[test]
     fn test_mod_order_vol() {
-        let mut book = OrderBook::new(0, 1, true);
+        let mut book: OrderBook = OrderBook::new(0, 1, true);
 
         book.create_and_place_order(Side::Ask, 10, 0, Some(100))
             .unwrap();
@@ -938,7 +995,7 @@ mod tests {
 
     #[test]
     fn test_modify_order() {
-        let mut book = OrderBook::new(0, 1, true);
+        let mut book: OrderBook = OrderBook::new(0, 1, true);
 
         book.create_and_place_order(Side::Ask, 10, 0, Some(100))
             .unwrap();
@@ -959,7 +1016,7 @@ mod tests {
 
     #[test]
     fn test_modify_order_crossing() {
-        let mut book = OrderBook::new(0, 1, true);
+        let mut book: OrderBook = OrderBook::new(0, 1, true);
 
         book.create_and_place_order(Side::Ask, 10, 0, Some(100))
             .unwrap();
@@ -985,7 +1042,7 @@ mod tests {
 
     #[test]
     fn test_trades() {
-        let mut book = OrderBook::new(0, 1, true);
+        let mut book: OrderBook = OrderBook::new(0, 1, true);
 
         book.create_order(Side::Ask, 101, 101, Some(20)).unwrap();
         book.create_order(Side::Ask, 101, 101, Some(18)).unwrap();
@@ -1031,7 +1088,7 @@ mod tests {
 
     #[test]
     fn test_market_order_no_trading() {
-        let mut book = OrderBook::new(0, 1, false);
+        let mut book: OrderBook = OrderBook::new(0, 1, false);
 
         book.create_and_place_order(Side::Bid, 101, 101, None)
             .unwrap();
@@ -1044,7 +1101,7 @@ mod tests {
 
     #[test]
     fn test_unfilled_market_order() {
-        let mut book = OrderBook::new(0, 1, true);
+        let mut book: OrderBook = OrderBook::new(0, 1, true);
 
         book.create_and_place_order(Side::Ask, 10, 101, Some(50))
             .unwrap();
@@ -1059,7 +1116,7 @@ mod tests {
 
     #[test]
     fn test_incorrect_price_err() {
-        let mut book = OrderBook::new(0, 2, true);
+        let mut book: OrderBook = OrderBook::new(0, 2, true);
 
         let res = book.create_order(Side::Ask, 100, 101, Some(51));
 
@@ -1074,7 +1131,7 @@ mod tests {
 
     #[test]
     fn test_no_double_place() {
-        let mut book = OrderBook::new(0, 2, true);
+        let mut book: OrderBook = OrderBook::new(0, 2, true);
 
         let id = book.create_order(Side::Ask, 100, 101, Some(50)).unwrap();
 
@@ -1095,7 +1152,7 @@ mod tests {
         use rand_xoshiro::rand_core::SeedableRng;
         use rand_xoshiro::Xoroshiro128Plus;
 
-        let mut book = OrderBook::new(0, 1, true);
+        let mut book: OrderBook = OrderBook::new(0, 1, true);
 
         let mut rng = Xoroshiro128Plus::seed_from_u64(101);
 
