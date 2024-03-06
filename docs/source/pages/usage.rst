@@ -22,7 +22,7 @@ An orderbook is initialised with a start time
 
    import bourse
 
-   book = bourse.core.OrderBook(0)
+   book = bourse.core.OrderBook(0, 1)
 
 The state of the orderbook an then be directly
 updated, for example placing a limit bid order
@@ -86,7 +86,7 @@ long in time each simulated step is)
 
    seed = 101
    step_size = 100_000
-   env = bourse.core.StepEnv(seed, 0, step_size)
+   env = bourse.core.StepEnv(seed, 0, 1, step_size)
 
 The state of the simulation is updated in discrete
 steps, with transactions submitted to a queue to
@@ -109,6 +109,14 @@ step, for example bid-ask prices can be retrieved using
 .. testcode:: sim_usage
 
    bid_prices, ask_prices = env.get_prices()
+
+the full level 2 data (price and volumes along with volumes
+and number of orders at top 10 levels) records can be
+retrieved with
+
+.. testcode:: sim_usage
+
+   level_2_data = env.get_market_data()
 
 See :py:class:`bourse.core.StepEnv` for full details
 of the environment API.
