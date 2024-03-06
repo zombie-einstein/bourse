@@ -43,7 +43,7 @@ pub struct NoiseAgentParams {
 ///     pub a: NoiseAgent,
 /// }
 ///
-/// let mut env = Env::new(0, 1_000_000, true);
+/// let mut env = Env::new(0, 1, 1_000_000, true);
 ///
 /// let params = NoiseAgentParams{
 ///     tick_size: 2,
@@ -133,7 +133,8 @@ impl Agent for NoiseAgent {
                         self.tick_size,
                         self.params.trade_vol,
                         *trader_id,
-                    ),
+                    )
+                    .unwrap(),
                     false => common::place_sell_limit_order(
                         env,
                         rng,
@@ -142,7 +143,8 @@ impl Agent for NoiseAgent {
                         self.tick_size,
                         self.params.trade_vol,
                         *trader_id,
-                    ),
+                    )
+                    .unwrap(),
                 };
                 live_orders.push(order_id);
             }
@@ -150,8 +152,12 @@ impl Agent for NoiseAgent {
             if rng.gen::<f32>() < self.params.p_market {
                 let side = rng.gen_bool(0.5);
                 match side {
-                    true => env.place_order(Side::Bid, self.params.trade_vol, *trader_id, None),
-                    false => env.place_order(Side::Ask, self.params.trade_vol, *trader_id, None),
+                    true => env
+                        .place_order(Side::Bid, self.params.trade_vol, *trader_id, None)
+                        .unwrap(),
+                    false => env
+                        .place_order(Side::Ask, self.params.trade_vol, *trader_id, None)
+                        .unwrap(),
                 };
             }
         }
@@ -187,7 +193,7 @@ mod tests {
 
     #[test]
     fn test_place_and_cancel_limit_orders() {
-        let mut env = Env::new(0, 1_000_000, true);
+        let mut env = Env::new(0, 1, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let params = NoiseAgentParams {

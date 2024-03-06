@@ -5,7 +5,7 @@ use rand::{Rng, RngCore};
 use rand_distr::Distribution;
 
 use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
-use crate::Env;
+use crate::{Env, OrderError};
 
 /// Round a price up to the nearest tick and cast to a [Price]
 ///
@@ -99,7 +99,7 @@ pub fn place_buy_limit_order<R: RngCore, D: Distribution<f64>>(
     tick_size: f64,
     trade_vol: Vol,
     trader_id: TraderId,
-) -> OrderId {
+) -> Result<OrderId, OrderError> {
     let dist = price_dist.sample(rng).abs();
     let price = mid_price - dist;
     let price = round_price_down(price, tick_size);
@@ -132,7 +132,7 @@ pub fn place_sell_limit_order<R: RngCore, D: Distribution<f64>>(
     tick_size: f64,
     trade_vol: Vol,
     trader_id: TraderId,
-) -> OrderId {
+) -> Result<OrderId, OrderError> {
     let dist = price_dist.sample(rng).abs();
     let price = mid_price + dist;
     let price = round_price_up(price, tick_size);
@@ -189,13 +189,13 @@ mod test {
 
     #[test]
     fn test_cancel_orders() {
-        let mut env = Env::new(0, 1_000_000, true);
+        let mut env = Env::new(0, 1, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let ids: Vec<OrderId> = (0..10)
             .into_iter()
             .map(|x| {
-                env.place_order(Side::Bid, 100, 0, Some(50));
+                env.place_order(Side::Bid, 100, 0, Some(50)).unwrap();
                 x
             })
             .collect();
@@ -213,7 +213,7 @@ mod test {
 
     #[test]
     fn test_placing_orders() {
-        let mut env = Env::new(0, 1_000_000, true);
+        let mut env = Env::new(0, 1, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
         let price_dist = Uniform::<f64>::new(-100.0, 100.0);
         let mid_price: f64 = 200.0;
@@ -226,13 +226,13 @@ mod test {
 
         let buy_order = env.get_orders()[0];
 
-        matches!(buy_order.side, Side::Bid);
+        assert!(matches!(buy_order.side, Side::Bid));
         assert!(buy_order.price % 5 == 0);
         assert!(buy_order.price <= 200);
 
         let sell_order = env.get_orders()[1];
 
-        matches!(sell_order.side, Side::Ask);
+        assert!(matches!(sell_order.side, Side::Ask));
         assert!(sell_order.price % 5 == 0);
         assert!(sell_order.price >= 200);
     }

@@ -49,7 +49,7 @@ We then initialise an environment and set of agents
    n_steps = 50
 
    agents = [RandomAgent(i, (10, 100)) for i in range(50)]
-   env = bourse.core.StepEnv(seed, 0, 100_000)
+   env = bourse.core.StepEnv(seed, 0, 1, 100_000)
 
 We can then use :py:meth:`bourse.step_sim.run` to run the
 simulation

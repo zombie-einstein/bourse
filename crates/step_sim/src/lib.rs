@@ -49,7 +49,8 @@
 //!     fn update<R: RngCore>(
 //!         &mut self, env: &mut Env, rng: &mut R
 //!     ) {
-//!         let (bid, ask) = env.get_orderbook().bid_ask();
+//!         let bid = env.level_2_data().bid_price;
+//!         let ask = env.level_2_data().ask_price;
 //!         let mid = (ask - bid) / 2;
 //!         let mid_price = bid + mid;
 //!         for _ in (0..self.n_agents) {
@@ -69,7 +70,7 @@
 //! }
 //!
 //! // Initialise the environment and agents
-//! let mut env = Env::new(0, 1_000_000, true);
+//! let mut env = Env::new(0, 1, 1_000_000, true);
 //! let mut agents = Agents{offset: 6, vol: 50, n_agents: 10};
 //!
 //! // Run the simulation
@@ -116,7 +117,7 @@
 //!     pub b: AgentTypeB,
 //! }
 //!
-//! let mut env = bourse_de::Env::new(0, 1_000_000, true);
+//! let mut env = bourse_de::Env::new(0, 1, 1_000_000, true);
 //! let mut agents = SimAgents{a: AgentTypeA{}, b: AgentTypeB{}};
 //!
 //! sim_runner(&mut env, &mut agents, 101, 50);
@@ -134,6 +135,6 @@ pub mod agents;
 mod env;
 mod runner;
 
-pub use bourse_book::types;
+pub use bourse_book::{types, OrderError};
 pub use env::Env;
 pub use runner::sim_runner;

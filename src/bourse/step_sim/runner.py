@@ -32,7 +32,7 @@ def run(
        import bourse
 
        agents = []
-       env = env = bourse.core.StepEnv(0, 0, 1000)
+       env = env = bourse.core.StepEnv(0, 0, 2, 1000)
 
     .. testcode:: runner_docstring
 
@@ -59,17 +59,17 @@ def run(
     Returns
     -------
     dict
-        Dictionary containing market data with keys:
+        Dictionary containing level 2 market data with keys:
 
         - ``bid_price``: Bid price at each step
         - ``ask_price``: Ask price at each step
         - ``bid_vol``: Total bid volume at each step
         - ``ask_vol``: Total ask volume at each step
-        - ``bid_touch_vol``: Bid touch volume at each step
-        - ``ask_touch_vol``: Ask touch volume at each step
-        - ``bid_touch_order_count``: Number of orders at the touch
-        - ``ask_touch_order_count``: Number of orders at the touch
         - ``trade_vol``: Trade volume each step
+        - ``bid_vol_<N>``: Bid volume at top 10 levels at each step
+        - ``ask_vol_<N>``: Ask volume at top 10 levels at each step
+        - ``n_bid_<N>``: Number of bid orders at top 10 levels at each step
+        - ``n_ask_<N>``: Number of ask orders at top 10 levels at each step
     """
 
     rng = np.random.default_rng(seed)

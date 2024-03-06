@@ -27,6 +27,8 @@ pub trait SideFunctionality {
     fn vol(&self) -> Vol;
     /// Get the id of the highest priority order
     fn best_order_idx(&self) -> Option<OrderId>;
+    /// Get the volume and orders at a price level
+    fn vol_and_orders_at_price(&self, price: Price) -> (Vol, OrderCount);
 }
 
 /// Order book side data structure
@@ -126,6 +128,19 @@ impl OrderBookSide {
     fn best_order_idx(&self) -> Option<OrderId> {
         self.orders.first_key_value().map(|(_, v)| *v)
     }
+
+    /// Get volume and numbers of orders at a price level
+    ///
+    /// # Arguments
+    ///
+    /// - `price` - Price level to retrieve data for
+    ///
+    fn vol_and_orders_at_price(&self, price: Price) -> (Vol, OrderCount) {
+        match self.volumes.get(&price) {
+            Some(x) => *x,
+            None => (0, 0),
+        }
+    }
 }
 
 /// Bid-side specific functionality
@@ -199,6 +214,11 @@ impl SideFunctionality for BidSide {
     fn best_order_idx(&self) -> Option<OrderId> {
         self.0.best_order_idx()
     }
+
+    fn vol_and_orders_at_price(&self, price: Price) -> (Vol, OrderCount) {
+        let price = Price::MAX - price;
+        self.0.vol_and_orders_at_price(price)
+    }
 }
 
 impl SideFunctionality for AskSide {
@@ -263,6 +283,10 @@ impl SideFunctionality for AskSide {
     /// Get the index of the best ask order
     fn best_order_idx(&self) -> Option<OrderId> {
         self.0.best_order_idx()
+    }
+
+    fn vol_and_orders_at_price(&self, price: Price) -> (Vol, OrderCount) {
+        self.0.vol_and_orders_at_price(price)
     }
 }
 
@@ -429,5 +453,18 @@ mod tests {
         assert!(side.best_vol() == 5);
         assert!(side.best_vol_and_orders() == (5, 1));
         assert!(side.vol() == 5);
+    }
+
+    #[test]
+    fn test_vol_and_orders_at_price() {
+        let mut side = AskSide::new();
+
+        side.insert_order(get_ask_key(0, 100), 1, 10);
+        side.insert_order(get_ask_key(1, 100), 2, 20);
+        side.insert_order(get_ask_key(1, 101), 3, 40);
+
+        assert!(side.vol_and_orders_at_price(100) == (30, 2));
+        assert!(side.vol_and_orders_at_price(101) == (40, 1));
+        assert!(side.vol_and_orders_at_price(102) == (0, 0));
     }
 }

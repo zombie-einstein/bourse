@@ -12,14 +12,14 @@
 //!
 //! ```
 //! use bourse_book;
-//! use bourse_book::types;
+//! use bourse_book::{types, OrderBook};
 //!
-//! let mut book = bourse_book::OrderBook::new(0, true);
+//! let mut book: OrderBook = OrderBook::new(0, 1, true);
 //!
 //! // Create a new order
 //! let order_id = book.create_order(
 //!     types::Side::Bid, 50, 101, Some(50)
-//! );
+//! ).unwrap();
 //!
 //! // Place the order on the market
 //! book.place_order(order_id);
@@ -47,7 +47,7 @@
 //! ```
 //! # use bourse_book::OrderBook;
 //! # use bourse_book::types::{Order, Trade};
-//! # let book = OrderBook::new(0, true);
+//! # let book: OrderBook = OrderBook::new(0, 1, true);
 //! // Get references to all the orders created
 //! let order_history: Vec<&Order> = book.get_orders();
 //! // Get a reference to trade records
@@ -63,7 +63,7 @@
 //!
 //! ```
 //! # use bourse_book::OrderBook;
-//! # let book = OrderBook::new(0, true);
+//! # let book: OrderBook = OrderBook::new(0, 1, true);
 //! let state = serde_json::to_string(&book).unwrap();
 //! let book = serde_json::from_str::<OrderBook>(state.as_str()).unwrap();
 //! ```
@@ -72,9 +72,9 @@
 //!
 //! ```no_run
 //! # use bourse_book::OrderBook;
-//! # let book = OrderBook::new(0, true);
+//! # let book: OrderBook = OrderBook::new(0, 1, true);
 //! book.save_json("foo.json", true);
-//! let loaded_book = OrderBook::load_json("foo.json");
+//! let loaded_book: OrderBook = OrderBook::load_json("foo.json").unwrap();
 //! ```
 //!
 //! # Notes
@@ -98,4 +98,4 @@ mod orderbook;
 mod side;
 pub mod types;
 
-pub use orderbook::OrderBook;
+pub use orderbook::{OrderBook, OrderError};

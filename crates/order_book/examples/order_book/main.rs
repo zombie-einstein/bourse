@@ -1,17 +1,16 @@
 use bourse_book::{types, OrderBook};
 
 fn main() {
-    let mut book = OrderBook::new(0, true);
+    let mut book: OrderBook = OrderBook::new(0, 1, true);
 
-    let id_a = book.create_order(types::Side::Ask, 20, 0, Some(60));
-    let id_b = book.create_order(types::Side::Ask, 20, 0, Some(65));
-    let id_c = book.create_order(types::Side::Bid, 10, 0, Some(50));
-    let id_d = book.create_order(types::Side::Bid, 10, 0, Some(45));
-
-    book.place_order(id_a);
-    book.place_order(id_b);
-    book.place_order(id_c);
-    book.place_order(id_d);
+    book.create_and_place_order(types::Side::Ask, 20, 0, Some(60))
+        .unwrap();
+    book.create_and_place_order(types::Side::Ask, 20, 0, Some(65))
+        .unwrap();
+    book.create_and_place_order(types::Side::Bid, 10, 0, Some(50))
+        .unwrap();
+    book.create_and_place_order(types::Side::Bid, 10, 0, Some(45))
+        .unwrap();
 
     let (bid, ask) = book.bid_ask();
 
@@ -23,7 +22,7 @@ fn main() {
         book.ask_vol()
     );
 
-    let id_e = book.create_order(types::Side::Ask, 15, 99, None);
+    let id_e = book.create_order(types::Side::Ask, 15, 99, None).unwrap();
 
     book.set_time(10);
     book.place_order(id_e);

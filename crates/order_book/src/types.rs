@@ -213,3 +213,24 @@ pub enum Event {
         new_vol: Option<Vol>,
     },
 }
+
+/// Level 1 market data
+pub struct Level1Data {
+    pub bid_price: Price,
+    pub ask_price: Price,
+    pub bid_vol: Vol,
+    pub ask_vol: Vol,
+    pub bid_touch_vol: Vol,
+    pub ask_touch_vol: Vol,
+    pub bid_touch_orders: OrderCount,
+    pub ask_touch_orders: OrderCount,
+}
+
+pub struct Level2Data<const N: usize> {
+    pub bid_price: Price,
+    pub ask_price: Price,
+    pub bid_vol: Vol,
+    pub ask_vol: Vol,
+    pub bid_price_levels: [(Vol, OrderCount); N],
+    pub ask_price_levels: [(Vol, OrderCount); N],
+}

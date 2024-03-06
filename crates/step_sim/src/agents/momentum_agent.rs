@@ -78,7 +78,7 @@ pub struct MomentumParams {
 ///     pub a: MomentumAgent,
 /// }
 ///
-/// let mut env = Env::new(0, 1_000_000, true);
+/// let mut env = Env::new(0, 1, 1_000_000, true);
 ///
 /// let params = MomentumParams {
 ///     tick_size: 2,
@@ -168,7 +168,8 @@ impl Agent for MomentumAgent {
                         self.tick_size,
                         self.params.trade_vol,
                         *trader_id,
-                    );
+                    )
+                    .unwrap();
                     live_orders.push(order_id);
                 } else if m < 0.0 {
                     let order_id = common::place_sell_limit_order(
@@ -179,16 +180,19 @@ impl Agent for MomentumAgent {
                         self.tick_size,
                         self.params.trade_vol,
                         *trader_id,
-                    );
+                    )
+                    .unwrap();
                     live_orders.push(order_id);
                 }
             }
 
             if rng.gen::<f64>() < p_market {
                 if m > 0.0 {
-                    env.place_order(Side::Bid, self.params.trade_vol, *trader_id, None);
+                    env.place_order(Side::Bid, self.params.trade_vol, *trader_id, None)
+                        .unwrap();
                 } else if m < 0.0 {
-                    env.place_order(Side::Ask, self.params.trade_vol, *trader_id, None);
+                    env.place_order(Side::Ask, self.params.trade_vol, *trader_id, None)
+                        .unwrap();
                 }
             }
         }
@@ -209,11 +213,11 @@ mod tests {
 
     #[test]
     fn test_init_and_no_order() {
-        let mut env = Env::new(0, 1_000_000, true);
+        let mut env = Env::new(0, 1, 1_000_000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
-        env.place_order(Side::Bid, 100, 0, Some(1000));
-        env.place_order(Side::Ask, 100, 0, Some(1020));
+        env.place_order(Side::Bid, 100, 0, Some(1000)).unwrap();
+        env.place_order(Side::Ask, 100, 0, Some(1020)).unwrap();
         env.step(&mut rng);
 
         let params = MomentumParams {

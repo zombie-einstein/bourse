@@ -151,7 +151,8 @@ mod tests {
 
     impl Agent for TestAgent {
         fn update<R: RngCore>(&mut self, env: &mut Env, _rng: &mut R) {
-            env.place_order(self.side, 10, 101, Some(self.price));
+            env.place_order(self.side, 10, 101, Some(self.price))
+                .unwrap();
         }
     }
 
@@ -163,7 +164,7 @@ mod tests {
             pub b: TestAgent,
         }
 
-        let mut env = Env::new(0, 1000, true);
+        let mut env = Env::new(0, 1, 1000, true);
         let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 
         let mut test_agents = TestAgents {

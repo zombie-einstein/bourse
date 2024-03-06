@@ -1,6 +1,7 @@
 use super::types;
 use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_book::OrderBook as BaseOrderBook;
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
 /// Rust orderbook interface
@@ -37,9 +38,9 @@ pub struct OrderBook(BaseOrderBook);
 #[pymethods]
 impl OrderBook {
     #[new]
-    #[pyo3(signature = (start_time, trading=true))]
-    pub fn new(start_time: Nanos, trading: bool) -> PyResult<Self> {
-        let inner = BaseOrderBook::new(start_time, trading);
+    #[pyo3(signature = (start_time, tick_size, trading=true))]
+    pub fn new(start_time: Nanos, tick_size: Price, trading: bool) -> PyResult<Self> {
+        let inner = BaseOrderBook::new(start_time, tick_size, trading);
         Ok(Self(inner))
     }
 
@@ -237,14 +238,17 @@ impl OrderBook {
         vol: Vol,
         trader_id: TraderId,
         price: Option<Price>,
-    ) -> OrderId {
+    ) -> PyResult<OrderId> {
         let side = match bid {
             true => Side::Bid,
             false => Side::Ask,
         };
-        let order_id = self.0.create_order(side, vol, trader_id, price);
-        self.0.place_order(order_id);
-        order_id
+        let order_id = self.0.create_and_place_order(side, vol, trader_id, price);
+
+        match order_id {
+            Ok(i) => Ok(i),
+            Err(e) => Err(PyValueError::new_err(e.to_string())),
+        }
     }
 
     /// cancel_order(order_id: int)

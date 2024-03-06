@@ -1,11 +1,12 @@
 import numpy as np
+import pytest
 
 import bourse
 
 
 def test_step_sim_env():
 
-    env = bourse.core.StepEnv(101, 0, 100_000)
+    env = bourse.core.StepEnv(101, 0, 1, 100_000)
 
     env.place_order(True, 100, 101, price=50)
     env.place_order(False, 100, 101, price=60)
@@ -80,12 +81,13 @@ def test_step_sim_env():
         "ask_price",
         "bid_vol",
         "ask_vol",
-        "bid_touch_vol",
-        "ask_touch_vol",
-        "bid_touch_order_count",
-        "ask_touch_order_count",
         "trade_vol",
     }
+
+    expected_keys.update({f"bid_vol_{i}" for i in range(10)})
+    expected_keys.update({f"ask_vol_{i}" for i in range(10)})
+    expected_keys.update({f"n_bid_{i}" for i in range(10)})
+    expected_keys.update({f"n_ask_{i}" for i in range(10)})
 
     assert set(core_data.keys()) == expected_keys
 
@@ -95,13 +97,22 @@ def test_step_sim_env():
     assert np.array_equal(core_data["bid_vol"], np.array([100, 200, 200, 200]))
     assert np.array_equal(core_data["ask_vol"], np.array([100, 200, 50, 50]))
 
-    assert np.array_equal(core_data["bid_touch_vol"], np.array([100, 100, 100, 100]))
-    assert np.array_equal(core_data["ask_touch_vol"], np.array([100, 100, 50, 50]))
+    assert np.array_equal(core_data["bid_vol_0"], np.array([100, 100, 100, 100]))
+    assert np.array_equal(core_data["ask_vol_0"], np.array([100, 100, 50, 50]))
 
-    assert np.array_equal(core_data["bid_touch_order_count"], np.array([1, 1, 1, 1]))
-    assert np.array_equal(core_data["ask_touch_order_count"], np.array([1, 1, 1, 1]))
+    assert np.array_equal(core_data["n_bid_0"], np.array([1, 1, 1, 1]))
+    assert np.array_equal(core_data["n_ask_0"], np.array([1, 1, 1, 1]))
 
     assert np.array_equal(core_data["trade_vol"], np.array([0, 0, 150, 0]))
+
+
+def test_incorrect_price():
+    env = bourse.core.StepEnv(101, 0, 2, 100_000)
+
+    with pytest.raises(Exception):
+        env.place_order(True, 100, 101, price=21)
+    with pytest.raises(Exception):
+        env.place_order(False, 100, 101, price=21)
 
 
 def test_runner():
@@ -120,7 +131,7 @@ def test_runner():
             env.place_order(self.side, 10, 101, price=new_price)
             self.step += 1
 
-    env = bourse.core.StepEnv(101, 0, 100_000)
+    env = bourse.core.StepEnv(101, 0, 1, 100_000)
     agents = [TestAgent(True, 10), TestAgent(False, 50)]
 
     data = bourse.step_sim.run(env, agents, 10, 101)
@@ -129,6 +140,6 @@ def test_runner():
     assert np.array_equal(data["ask_price"], 50 - np.arange(10))
     assert np.array_equal(data["bid_vol"], 10 * np.arange(1, 11))
     assert np.array_equal(data["ask_vol"], 10 * np.arange(1, 11))
-    assert np.array_equal(data["bid_touch_vol"], 10 * np.ones(10))
-    assert np.array_equal(data["ask_touch_vol"], 10 * np.ones(10))
+    assert np.array_equal(data["bid_vol_0"], 10 * np.ones(10))
+    assert np.array_equal(data["ask_vol_0"], 10 * np.ones(10))
     assert np.array_equal(data["trade_vol"], np.zeros(10))
