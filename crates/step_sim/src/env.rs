@@ -4,13 +4,61 @@
 //! functionality to process instructions
 //! submitted by agents and to track market data
 //!
-use bourse_book::types::{
-    Event, Nanos, Order, OrderCount, OrderId, Price, Side, Status, Trade, TraderId, Vol,
+use crate::types::{
+    Event, Level2Data, Nanos, Order, OrderCount, OrderId, Price, Side, Status, Trade, TraderId, Vol,
 };
 use bourse_book::{OrderBook, OrderError};
 use rand::seq::SliceRandom;
 use rand::RngCore;
-use std::mem;
+use std::{array, mem};
+
+/// Market data history recording
+///
+/// History of level 2 data over the course of
+/// the existence of this environment.
+pub struct Level2DataRecords<const N: usize> {
+    /// Touch price histories
+    prices: (Vec<Price>, Vec<Price>),
+    /// Bid-ask volume histories
+    volumes: (Vec<Vol>, Vec<Vol>),
+    /// Volumes at price levels
+    volumes_at_levels: ([Vec<Vol>; N], [Vec<Vol>; N]),
+    /// numbers of orders at price levels
+    orders_at_levels: ([Vec<OrderCount>; N], [Vec<OrderCount>; N]),
+}
+
+impl<const N: usize> Level2DataRecords<N> {
+    /// Initialise an empty set of records
+    fn new() -> Self {
+        Self {
+            prices: (Vec::new(), Vec::new()),
+            volumes: (Vec::new(), Vec::new()),
+            volumes_at_levels: (
+                array::from_fn(|_| Vec::new()),
+                array::from_fn(|_| Vec::new()),
+            ),
+            orders_at_levels: (
+                array::from_fn(|_| Vec::new()),
+                array::from_fn(|_| Vec::new()),
+            ),
+        }
+    }
+
+    /// Append a record to the history
+    fn append_record(&mut self, record: &Level2Data<N>) {
+        self.prices.0.push(record.bid_price);
+        self.prices.1.push(record.ask_price);
+        self.volumes.0.push(record.bid_vol);
+        self.volumes.1.push(record.ask_vol);
+        for i in 0..N {
+            self.volumes_at_levels.0[i].push(record.bid_price_levels[i].0);
+            self.orders_at_levels.0[i].push(record.bid_price_levels[i].1);
+
+            self.volumes_at_levels.1[i].push(record.ask_price_levels[i].0);
+            self.orders_at_levels.1[i].push(record.ask_price_levels[i].1);
+        }
+    }
+}
 
 /// Discrete event simulation environment
 ///
@@ -24,11 +72,11 @@ use std::mem;
 ///
 /// ```
 /// use bourse_de;
-/// use bourse_de::types;
+/// use bourse_de::{types, Env};
 /// use rand_xoshiro::Xoroshiro128StarStar;
 /// use rand_xoshiro::rand_core::SeedableRng;
 ///
-/// let mut env = bourse_de::Env::new(0, 1, 1_000, true);
+/// let mut env: Env = Env::new(0, 1, 1_000, true);
 /// let mut rng = Xoroshiro128StarStar::seed_from_u64(101);
 ///
 /// // Submit a new order instruction
@@ -42,26 +90,22 @@ use std::mem;
 /// // Update the state of the market
 /// env.step(&mut rng)
 /// ```
-pub struct Env {
+pub struct Env<const N: usize = 10> {
     /// Time-length of each simulation step
     step_size: Nanos,
     /// Simulated order book
-    order_book: OrderBook,
-    /// Bid-ask price history
-    prices: (Vec<Price>, Vec<Price>),
-    /// Bid-ask volume histories
-    volumes: (Vec<Vol>, Vec<Vol>),
-    /// Number of touch order histories
-    touch_order_counts: (Vec<OrderCount>, Vec<OrderCount>),
-    /// Bid-ask touch volume histories
-    touch_volumes: (Vec<Vol>, Vec<Vol>),
+    order_book: OrderBook<N>,
     /// Per step trade volume histories
     trade_vols: Vec<Vol>,
     /// Transaction queue
     transactions: Vec<Event>,
+    /// Current level 2 market data
+    level_2_data: Level2Data<N>,
+    /// Level 2 data history
+    level_2_data_records: Level2DataRecords<N>,
 }
 
-impl Env {
+impl<const N: usize> Env<N> {
     /// Initialise an empty environment
     ///
     /// # Arguments
@@ -72,15 +116,15 @@ impl Env {
     ///   otherwise no trades will take place
     ///
     pub fn new(start_time: Nanos, tick_size: Price, step_size: Nanos, trading: bool) -> Self {
+        let order_book = OrderBook::new(start_time, tick_size, trading);
+        let level_2_data = order_book.level_2_data();
         Self {
             step_size,
-            order_book: OrderBook::new(start_time, tick_size, trading),
-            prices: (Vec::new(), Vec::new()),
-            volumes: (Vec::new(), Vec::new()),
-            touch_order_counts: (Vec::new(), Vec::new()),
-            touch_volumes: (Vec::new(), Vec::new()),
+            order_book,
             trade_vols: Vec::new(),
             transactions: Vec::new(),
+            level_2_data,
+            level_2_data_records: Level2DataRecords::new(),
         }
     }
 
@@ -118,20 +162,9 @@ impl Env {
 
         self.order_book.set_time(start_time + self.step_size);
 
-        let bid_ask = self.order_book.bid_ask();
-        self.prices.0.push(bid_ask.0);
-        self.prices.1.push(bid_ask.1);
-        self.volumes.0.push(self.order_book.bid_vol());
-        self.volumes.1.push(self.order_book.ask_vol());
-
-        let (bid_touch_vol, bid_touch_order_count) = self.order_book.bid_best_vol_and_orders();
-        self.touch_volumes.0.push(bid_touch_vol);
-        self.touch_order_counts.0.push(bid_touch_order_count);
-
-        let (ask_touch_vol, ask_touch_order_count) = self.order_book.ask_best_vol_and_orders();
-        self.touch_volumes.1.push(ask_touch_vol);
-        self.touch_order_counts.1.push(ask_touch_order_count);
-
+        // Update data records
+        self.level_2_data = self.order_book.level_2_data();
+        self.level_2_data_records.append_record(&self.level_2_data);
         self.trade_vols.push(self.order_book.get_trade_vol());
     }
 
@@ -221,22 +254,28 @@ impl Env {
 
     /// Get reference to bid-ask price histories
     pub fn get_prices(&self) -> &(Vec<Price>, Vec<Price>) {
-        &self.prices
+        &self.level_2_data_records.prices
     }
 
     /// Get bid-ask volume histories
     pub fn get_volumes(&self) -> &(Vec<Vol>, Vec<Vol>) {
-        &self.volumes
+        &self.level_2_data_records.volumes
     }
 
     /// Get bid-ask touch histories
-    pub fn get_touch_volumes(&self) -> &(Vec<Vol>, Vec<Vol>) {
-        &self.touch_volumes
+    pub fn get_touch_volumes(&self) -> (&Vec<Vol>, &Vec<Vol>) {
+        (
+            &self.level_2_data_records.volumes_at_levels.0[0],
+            &self.level_2_data_records.volumes_at_levels.1[0],
+        )
     }
 
     /// Get bid-ask order_count histories
-    pub fn get_touch_order_counts(&self) -> &(Vec<OrderCount>, Vec<OrderCount>) {
-        &self.touch_order_counts
+    pub fn get_touch_order_counts(&self) -> (&Vec<OrderCount>, &Vec<OrderCount>) {
+        (
+            &self.level_2_data_records.orders_at_levels.0[0],
+            &self.level_2_data_records.orders_at_levels.1[0],
+        )
     }
 
     /// Get per step trade volume histories
@@ -250,8 +289,13 @@ impl Env {
     }
 
     /// Get reference to the underlying orderbook
-    pub fn get_orderbook(&self) -> &OrderBook {
+    pub fn get_orderbook(&self) -> &OrderBook<N> {
         &self.order_book
+    }
+
+    /// Get level 2 data history
+    pub fn get_level_2_data_history(&self) -> &Level2DataRecords<N> {
+        &self.level_2_data_records
     }
 
     /// Get reference to trade data
@@ -296,7 +340,7 @@ mod tests {
     #[test]
     fn test_env() {
         let step_size: Nanos = 1000;
-        let mut env = Env::new(0, 1, step_size, true);
+        let mut env: Env = Env::new(0, 1, step_size, true);
         let mut rng = Rng::seed_from_u64(101);
 
         env.place_order(Side::Bid, 10, 101, Some(10)).unwrap();
@@ -341,12 +385,12 @@ mod tests {
         assert!(volumes.1 == vec![20, 40, 10]);
 
         let touch_volumes = env.get_touch_volumes();
-        assert!(touch_volumes.0 == vec![10, 10, 10]);
-        assert!(touch_volumes.1 == vec![20, 20, 10]);
+        assert!(*touch_volumes.0 == vec![10, 10, 10]);
+        assert!(*touch_volumes.1 == vec![20, 20, 10]);
 
         let touch_order_counts = env.get_touch_order_counts();
-        assert!(touch_order_counts.0 == vec![1, 1, 1]);
-        assert!(touch_order_counts.1 == vec![1, 1, 1]);
+        assert!(*touch_order_counts.0 == vec![1, 1, 1]);
+        assert!(*touch_order_counts.1 == vec![1, 1, 1]);
 
         let trade_vols = env.get_trade_vols();
         assert!(*trade_vols == vec![0, 0, 30]);
