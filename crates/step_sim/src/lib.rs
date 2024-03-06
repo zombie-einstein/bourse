@@ -49,7 +49,8 @@
 //!     fn update<R: RngCore>(
 //!         &mut self, env: &mut Env, rng: &mut R
 //!     ) {
-//!         let (bid, ask) = env.get_orderbook().bid_ask();
+//!         let bid = env.level_2_data().bid_price;
+//!         let ask = env.level_2_data().ask_price;
 //!         let mid = (ask - bid) / 2;
 //!         let mid_price = bid + mid;
 //!         for _ in (0..self.n_agents) {

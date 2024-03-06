@@ -18,13 +18,13 @@ use std::{array, mem};
 /// the existence of this environment.
 pub struct Level2DataRecords<const N: usize> {
     /// Touch price histories
-    prices: (Vec<Price>, Vec<Price>),
+    pub prices: (Vec<Price>, Vec<Price>),
     /// Bid-ask volume histories
-    volumes: (Vec<Vol>, Vec<Vol>),
+    pub volumes: (Vec<Vol>, Vec<Vol>),
     /// Volumes at price levels
-    volumes_at_levels: ([Vec<Vol>; N], [Vec<Vol>; N]),
+    pub volumes_at_levels: ([Vec<Vol>; N], [Vec<Vol>; N]),
     /// numbers of orders at price levels
-    orders_at_levels: ([Vec<OrderCount>; N], [Vec<OrderCount>; N]),
+    pub orders_at_levels: ([Vec<OrderCount>; N], [Vec<OrderCount>; N]),
 }
 
 impl<const N: usize> Level2DataRecords<N> {
@@ -106,6 +106,8 @@ pub struct Env<const N: usize = 10> {
 }
 
 impl<const N: usize> Env<N> {
+    pub const N_LEVELS: usize = N;
+
     /// Initialise an empty environment
     ///
     /// # Arguments
@@ -173,7 +175,7 @@ impl<const N: usize> Env<N> {
         self.order_book.enable_trading();
     }
 
-    /// Disable tradeing
+    /// Disable trading
     pub fn disable_trading(&mut self) {
         self.order_book.disable_trading();
     }
@@ -321,6 +323,11 @@ impl<const N: usize> Env<N> {
     ///
     pub fn order_status(&self, order_id: OrderId) -> Status {
         self.order_book.order(order_id).status
+    }
+
+    /// Reference to current level-2 market data
+    pub fn level_2_data(&self) -> &Level2Data<N> {
+        &self.level_2_data
     }
 
     #[cfg(test)]

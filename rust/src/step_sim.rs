@@ -1,3 +1,4 @@
+use std::array;
 use std::collections::HashMap;
 
 use super::types::{cast_order, cast_trade, status_to_int, PyOrder, PyTrade};
@@ -82,25 +83,37 @@ impl StepEnv {
     /// int: Current total ask side volume
     #[getter]
     pub fn ask_vol(&self) -> Vol {
-        self.env.get_orderbook().ask_vol()
+        self.env.level_2_data().ask_vol
     }
 
     /// int: Current ask side touch volume
     #[getter]
     pub fn best_ask_vol(&mut self) -> Vol {
-        self.env.get_orderbook().ask_best_vol()
+        self.env.level_2_data().ask_price_levels[0].0
     }
 
     /// tuple[int, int]: Current ask touch volume and order count
     #[getter]
     pub fn best_ask_vol_and_orders(&self) -> (Vol, OrderCount) {
-        self.env.get_orderbook().ask_best_vol_and_orders()
+        self.env.level_2_data().ask_price_levels[0]
     }
 
     /// int: Current total bid side volume
     #[getter]
     pub fn bid_vol(&self) -> Vol {
-        self.env.get_orderbook().bid_vol()
+        self.env.level_2_data().bid_vol
+    }
+
+    /// int: Current bid side touch volume
+    #[getter]
+    pub fn best_bid_vol(&mut self) -> Vol {
+        self.env.level_2_data().bid_price_levels[0].0
+    }
+
+    /// tuple[int, int]: Current bid touch volume and order count
+    #[getter]
+    pub fn best_bid_vol_and_orders(&self) -> (Vol, OrderCount) {
+        self.env.level_2_data().bid_price_levels[0]
     }
 
     /// int: Trade volume in the last step
@@ -109,22 +122,13 @@ impl StepEnv {
         self.env.get_orderbook().get_trade_vol()
     }
 
-    /// int: Current bid side touch volume
-    #[getter]
-    pub fn best_bid_vol(&mut self) -> Vol {
-        self.env.get_orderbook().bid_best_vol()
-    }
-
-    /// tuple[int, int]: Current bid touch volume and order count
-    #[getter]
-    pub fn best_bid_vol_and_orders(&self) -> (Vol, OrderCount) {
-        self.env.get_orderbook().bid_best_vol_and_orders()
-    }
-
     /// tuple[int, int]: Current bid-ask prices
     #[getter]
     pub fn bid_ask(&mut self) -> (Price, Price) {
-        self.env.get_orderbook().bid_ask()
+        (
+            self.env.level_2_data().bid_price,
+            self.env.level_2_data().ask_price,
+        )
     }
 
     /// order_status(order_id: int) -> int
@@ -414,44 +418,71 @@ impl StepEnv {
     ///
     /// Get simulation market data
     ///
-    /// Get a dictionary containing level 1 market data over the simulation
+    /// Get a dictionary containing level 2 market data over the simulation
     ///
     /// - Bid and ask touch prices
     /// - Bid and ask volumes
-    /// - Trade volumes at each step
+    /// - Volumes and number of orders at 10 levels from the touch
     ///
     /// Returns
     /// -------
     /// dict[str, np.ndarray]
     ///     Dictionary containing level 1 data with keys:
     ///
-    ///         - ``bid_price`` - Touch price
-    ///         - ``ask_price`` - Touch price
-    ///         - ``bid_vol`` - Total volume
-    ///         - ``ask_vol`` - Total volume
-    ///         - ``bid_touch_vol`` - Touch volume
-    ///         - ``ask_touch_vol`` - Touch volume
-    ///         - ``bid_touch_order_count`` - Number of orders at touch
-    ///         - ``ask_touch_order_count`` - Number of orders at touch
-    ///         - ``trade_vol`` - Total trade vol over a step
+    ///     - ``bid_price`` - Touch price
+    ///     - ``ask_price`` - Touch price
+    ///     - ``bid_vol`` - Total volume
+    ///     - ``ask_vol`` - Total volume
+    ///     - ``trade_vol`` - Total trade vol over a step
+    ///     - ``bid_vol_<N>`` - Volumes at 10 levels from bid touch
+    ///     - ``ask_vol_<N>`` - Volumes at 10 levels from ask touch
+    ///     - ``n_bid_<N>`` - Number of orders at 10 levels from the bid
+    ///     - ``n_ask_<N>`` - Number of orders at 10 levels from the ask
     ///
-    pub fn get_market_data<'a>(&self, py: Python<'a>) -> HashMap<&str, &'a PyArray1<u32>> {
-        let prices = self.get_prices(py);
-        let volumes = self.get_volumes(py);
+    pub fn get_market_data<'a>(&self, py: Python<'a>) -> HashMap<String, &'a PyArray1<u32>> {
+        let data = self.env.get_level_2_data_history();
         let trade_volumes = self.get_trade_volumes(py);
-        let touch_volumes = self.get_touch_volumes(py);
-        let touch_order_counts = self.get_touch_order_counts(py);
 
-        HashMap::from([
-            ("bid_price", prices.0),
-            ("ask_price", prices.1),
-            ("bid_vol", volumes.0),
-            ("ask_vol", volumes.1),
-            ("bid_touch_vol", touch_volumes.0),
-            ("ask_touch_vol", touch_volumes.1),
-            ("bid_touch_order_count", touch_order_counts.0),
-            ("ask_touch_order_count", touch_order_counts.1),
-            ("trade_vol", trade_volumes),
-        ])
+        let bid_vols: [(String, &'a PyArray1<u32>); 10] = array::from_fn(|i| {
+            (
+                format!("bid_vol_{i}"),
+                data.volumes_at_levels.0[i].to_pyarray(py),
+            )
+        });
+        let ask_vols: [(String, &'a PyArray1<u32>); 10] = array::from_fn(|i| {
+            (
+                format!("ask_vol_{i}"),
+                data.volumes_at_levels.1[i].to_pyarray(py),
+            )
+        });
+
+        let bid_orders: [(String, &'a PyArray1<u32>); 10] = array::from_fn(|i| {
+            (
+                format!("n_bid_{i}"),
+                data.orders_at_levels.0[i].to_pyarray(py),
+            )
+        });
+        let ask_orders: [(String, &'a PyArray1<u32>); 10] = array::from_fn(|i| {
+            (
+                format!("n_ask_{i}"),
+                data.orders_at_levels.1[i].to_pyarray(py),
+            )
+        });
+
+        let mut py_data = HashMap::from([
+            ("bid_price".to_string(), data.prices.0.to_pyarray(py)),
+            ("ask_price".to_string(), data.prices.1.to_pyarray(py)),
+            ("bid_vol".to_string(), data.volumes.0.to_pyarray(py)),
+            ("ask_vol".to_string(), data.volumes.1.to_pyarray(py)),
+            ("trade_vol".to_string(), trade_volumes),
+        ]);
+
+        py_data.extend(bid_vols);
+        py_data.extend(ask_vols);
+
+        py_data.extend(bid_orders);
+        py_data.extend(ask_orders);
+
+        py_data
     }
 }
