@@ -1,3 +1,5 @@
+import pytest
+
 import bourse
 
 
@@ -37,6 +39,16 @@ def test_place_order():
     assert ob.best_ask_vol() == 20
     assert ob.best_bid_vol_and_orders() == (10, 1)
     assert ob.best_ask_vol_and_orders() == (20, 1)
+
+
+def test_incorrect_order_price():
+    ob = bourse.core.OrderBook(0, 2)
+
+    with pytest.raises(Exception):
+        ob.place_order(True, 10, 101, price=11)
+
+    with pytest.raises(Exception):
+        ob.place_order(False, 10, 101, price=11)
 
 
 def test_cancel_order():

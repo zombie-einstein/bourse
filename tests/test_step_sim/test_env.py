@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 import bourse
 
@@ -103,6 +104,15 @@ def test_step_sim_env():
     assert np.array_equal(core_data["n_ask_0"], np.array([1, 1, 1, 1]))
 
     assert np.array_equal(core_data["trade_vol"], np.array([0, 0, 150, 0]))
+
+
+def test_incorrect_price():
+    env = bourse.core.StepEnv(101, 0, 2, 100_000)
+
+    with pytest.raises(Exception):
+        env.place_order(True, 100, 101, price=21)
+    with pytest.raises(Exception):
+        env.place_order(False, 100, 101, price=21)
 
 
 def test_runner():
