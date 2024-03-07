@@ -13,6 +13,7 @@ jobs:
       - name: No release
         if: github.ref != 'refs/heads/main'
         run: echo '::warning ::Release can only be run from the main branch!' && exit 1
+
   linux:
     runs-on: ubuntu-latest
     strategy:
@@ -140,7 +141,7 @@ jobs:
         merge-multiple: true
         path: dist/
     - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      uses: pypa/gh-action-pypi-publish@aec4e82833d00547d2c8e4744a0d08766a02629a
 
   release_rust:
     runs-on: ubuntu-latest
