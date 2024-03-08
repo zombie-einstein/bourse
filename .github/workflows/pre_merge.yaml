@@ -65,7 +65,7 @@ jobs:
       - name: Install pytest
         run: pip install pytest pytest-benchmark
       - name: Run tests 🧪
-        run: pytest -v tests
+        run: pytest -v tests --benchmark-disable
 
   python_examples:
     needs: maturin_build
