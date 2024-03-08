@@ -43,13 +43,15 @@ dependencies = [
   "maturin >= 1.2.3",
   "patchelf >= 0.17.2.1; platform_system != 'Darwin'",
   "pytest >= 7.4.2",
+  "pytest-benchmark >= 4.0.0",
   "pre-commit >= 3.3.3",
 ]
 
 [tool.hatch.envs.dev.scripts]
 develop = "maturin develop --release"
 lint = "pre-commit install && pre-commit run --all-files"
-test = "maturin develop --release && pytest -v tests"
+test = "maturin develop --release && pytest -v tests --benchmark-disable"
+bench = "maturin develop --release && pytest -v tests --benchmark-only"
 build = "maturin build --release"
 examples = "maturin build --release && python examples/random_trades.py"
 

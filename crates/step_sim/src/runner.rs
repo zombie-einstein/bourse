@@ -31,7 +31,7 @@ use rand_xoshiro::Xoroshiro128StarStar;
 /// let mut agents = Agents{};
 ///
 /// // Run for 100 steps from seed 101
-/// sim_runner(&mut env, &mut agents, 101, 100)
+/// sim_runner(&mut env, &mut agents, 101, 100, true)
 /// ```
 ///
 /// # Arguments
@@ -40,12 +40,29 @@ use rand_xoshiro::Xoroshiro128StarStar;
 /// - `agents` - Agent(s) implementing the [AgentSet] trait
 /// - `seed` - Random seed
 /// - `n_steps` - Number of simulation steps
+/// - `show_progress` - Show progress bar
 ///
-pub fn sim_runner<A: AgentSet>(env: &mut Env, agents: &mut A, seed: u64, n_steps: u64) {
+pub fn sim_runner<A: AgentSet>(
+    env: &mut Env,
+    agents: &mut A,
+    seed: u64,
+    n_steps: u64,
+    show_progress: bool,
+) {
     let mut rng = Xoroshiro128StarStar::seed_from_u64(seed);
 
-    for _ in tqdm!(0..n_steps) {
-        agents.update(env, &mut rng);
-        env.step(&mut rng);
+    match show_progress {
+        true => {
+            for _ in tqdm!(0..n_steps) {
+                agents.update(env, &mut rng);
+                env.step(&mut rng);
+            }
+        }
+        false => {
+            for _ in 0..n_steps {
+                agents.update(env, &mut rng);
+                env.step(&mut rng);
+            }
+        }
     }
 }

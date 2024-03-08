@@ -58,7 +58,7 @@ pub struct NoiseAgentParams {
 ///     a: NoiseAgent::new(0, 5, params),
 /// };
 ///
-/// sim_runner(&mut env, &mut agents, 101, 10);
+/// sim_runner(&mut env, &mut agents, 101, 10, false);
 /// ```
 ///
 /// # References

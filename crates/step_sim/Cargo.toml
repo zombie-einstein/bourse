@@ -13,7 +13,7 @@ categories.workspace = true
 [dependencies]
 rand_xoshiro.workspace = true
 rand.workspace = true
-kdam = "0.3.0"
+kdam = "0.5.1"
 rand_distr = "0.4.3"
 
 bourse-book = { path="../order_book" , version="0.3.0" }
@@ -21,3 +21,9 @@ bourse-macros = { path="../macros", version="0.3.0" }
 
 [dev-dependencies]
 assert_approx_eq = "1.1.0"
+divan.workspace = true
+
+[[bench]]
+name = "step_sim"
+path = "benches/benchmarks.rs"
+harness = false

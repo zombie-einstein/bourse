@@ -74,7 +74,7 @@
 //! let mut agents = Agents{offset: 6, vol: 50, n_agents: 10};
 //!
 //! // Run the simulation
-//! sim_runner(&mut env, &mut agents, 101, 50);
+//! sim_runner(&mut env, &mut agents, 101, 50, true);
 //!
 //! // Get history of prices over the course of the simulation
 //! let price_data = env.get_prices();
@@ -120,7 +120,7 @@
 //! let mut env = bourse_de::Env::new(0, 1, 1_000_000, true);
 //! let mut agents = SimAgents{a: AgentTypeA{}, b: AgentTypeB{}};
 //!
-//! sim_runner(&mut env, &mut agents, 101, 50);
+//! sim_runner(&mut env, &mut agents, 101, 50, true);
 //! ```
 //!
 //! # Randomness

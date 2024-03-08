@@ -63,9 +63,9 @@ jobs:
       - name: Install package
         run: pip install bourse-*-manylinux_2_34_x86_64.whl
       - name: Install pytest
-        run: pip install pytest
+        run: pip install pytest pytest-benchmark
       - name: Run tests 🧪
-        run: pytest -v tests
+        run: pytest -v tests --benchmark-disable
 
   python_examples:
     needs: maturin_build

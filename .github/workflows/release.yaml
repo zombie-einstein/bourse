@@ -100,12 +100,12 @@ jobs:
         - uses: dtolnay/rust-toolchain@stable
         - name: Build docs 📚
           run: cargo doc --no-deps
-        - name: Test publish Bourse order book library
-          run: cargo publish --dry-run -p bourse-book
+        - name: Test build Bourse order book library
+          run: cargo build -p bourse-book
         - name: Test publish Bourse discrete event library
-          run: cargo publish --dry-run -p bourse-book
+          run: cargo build -p bourse-de
         - name: Test publish Bourse macros
-          run: cargo publish --dry-run -p bourse-macros
+          run: cargo build -p bourse-macros
 
   build_docs:
     if: github.event.pull_request.draft == false
@@ -141,7 +141,7 @@ jobs:
         merge-multiple: true
         path: dist/
     - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@aec4e82833d00547d2c8e4744a0d08766a02629a
+      uses: pypa/gh-action-pypi-publish@v1.8.14
 
   release_rust:
     runs-on: ubuntu-latest
