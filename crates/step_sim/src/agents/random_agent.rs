@@ -29,9 +29,8 @@ use rand::RngCore;
 /// # Examples
 ///
 /// ```
-/// use bourse_de::agents::{Agent, AgentSet, RandomAgents};
+/// use bourse_de::agents::{Agent, RandomAgents, Agents};
 /// use bourse_de::{sim_runner, Env};
-/// use bourse_macros::Agents;
 ///
 /// #[derive(Agents)]
 /// struct SimAgents {
