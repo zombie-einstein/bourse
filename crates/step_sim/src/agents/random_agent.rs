@@ -44,7 +44,7 @@ use rand::RngCore;
 ///     a: RandomAgents::new(10, (40, 60), (10, 20), 2, 0.8),
 /// };
 ///
-/// sim_runner(&mut env, &mut agents, 101, 10);
+/// sim_runner(&mut env, &mut agents, 101, 10, false);
 /// ```
 pub struct RandomAgents {
     orders: Vec<Option<OrderId>>,

@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 doctest = false
 
 [dependencies]
-pyo3 = { version="0.20.0", features = ["extension-module"] }
+pyo3 = { version="0.20.3", features = ["extension-module"] }
 numpy = "0.20.0"
 rand_xoshiro.workspace = true
 

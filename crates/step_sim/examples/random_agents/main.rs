@@ -16,7 +16,7 @@ pub fn main() {
         b: RandomAgents::new(50, (10, 90), (50, 70), 2, 0.2),
     };
 
-    sim_runner(&mut env, &mut agents, 101, 100);
+    sim_runner(&mut env, &mut agents, 101, 100, true);
 
     println!("{} trades", env.get_trades().len());
 }
