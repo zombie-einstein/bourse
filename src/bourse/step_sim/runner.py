@@ -14,6 +14,7 @@ def run(
     agents: typing.Iterable,
     n_steps: int,
     seed: int,
+    show_progress: bool = True,
 ) -> typing.Dict[str, np.ndarray]:
     """
     Run a discrete event simulation for fixed number of steps
@@ -55,6 +56,9 @@ def run(
         Number of simulation steps to run.
     seed: int
         Random seed.
+    show_progress: bool, optional
+        If ``True`` a progress bar will be displayed,
+        default ``True``
 
     Returns
     -------
@@ -74,7 +78,7 @@ def run(
 
     rng = np.random.default_rng(seed)
 
-    for _ in tqdm.trange(n_steps):
+    for _ in tqdm.trange(n_steps, disable=not show_progress):
         for agent in agents:
             agent.update(rng, env)
 
