@@ -86,8 +86,12 @@ pub struct OrderBook<const N: usize = 10> {
     trading: bool,
 }
 
+/// Order rejection errors
+///
+/// Errors raised when error creation fails.
 #[derive(Debug, Clone)]
 pub enum OrderError {
+    /// Price not a multiple of market tick-size
     PriceError { price: Price, tick_size: Price },
 }
 
