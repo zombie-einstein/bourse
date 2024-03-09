@@ -34,7 +34,7 @@ checksum = "ed570934406eb16438a4e976b1b4500774099c13b8cb96eec99f620f05090ddf"
 
 [[package]]
 name = "bourse"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bourse-book",
  "bourse-de",
@@ -45,7 +45,7 @@ dependencies = [
 
 [[package]]
 name = "bourse-book"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "rand",
  "rand_xoshiro",
@@ -55,7 +55,7 @@ dependencies = [
 
 [[package]]
 name = "bourse-de"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "assert_approx_eq",
  "bourse-book",
@@ -69,7 +69,7 @@ dependencies = [
 
 [[package]]
 name = "bourse-macros"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "quote",
  "syn 1.0.109",
