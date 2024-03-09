@@ -216,21 +216,36 @@ pub enum Event {
 
 /// Level 1 market data
 pub struct Level1Data {
+    /// Bid touch price
     pub bid_price: Price,
+    /// Ask touch price
     pub ask_price: Price,
+    /// Bid total volume
     pub bid_vol: Vol,
+    /// Ask total volume
     pub ask_vol: Vol,
+    /// Bid touch volume
     pub bid_touch_vol: Vol,
+    /// Ask touch volume
     pub ask_touch_vol: Vol,
+    /// Number of bid orders at touch
     pub bid_touch_orders: OrderCount,
+    /// Number of ask orders at touch
     pub ask_touch_orders: OrderCount,
 }
 
+/// Level 2 market data
 pub struct Level2Data<const N: usize> {
+    /// Bid touch price
     pub bid_price: Price,
+    /// Ask touch price
     pub ask_price: Price,
+    /// Bid total volume
     pub bid_vol: Vol,
+    /// Ask total volume
     pub ask_vol: Vol,
+    /// Volume and number of bid orders at price-levels
     pub bid_price_levels: [(Vol, OrderCount); N],
+    /// Volume and number of ask orders at price-levels
     pub ask_price_levels: [(Vol, OrderCount); N],
 }

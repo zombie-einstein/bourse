@@ -29,62 +29,69 @@
 //! updating, and have no guarantee of the ordering
 //! of transactions.
 //!
+//! See [bourse_book] for details of the limit
+//! order-book used in this environment.
+//!
 //! # Examples
 //!
 //! ```
 //! use bourse_de::types::{Price, Side, Vol};
-//! use bourse_de::agents::AgentSet;
+//! use bourse_de::agents;
+//! use bourse_de::agents::Agent;
 //! use bourse_de::{sim_runner, Env};
 //! use rand::{RngCore, Rng};
 //!
-//! struct Agents {
-//!     pub offset: Price,
-//!     pub vol: Vol,
-//!     pub n_agents: usize,
+//! // Define a set of agents using built
+//! // in definitions
+//! #[derive(agents::Agents)]
+//! struct SimAgents {
+//!     pub a: agents::MomentumAgent,
+//!     pub b: agents::NoiseAgent,
 //! }
 //!
-//! impl AgentSet for Agents {
-//!     // Agents place an order on a random side
-//!     // a fixed distance above/below the mid
-//!     fn update<R: RngCore>(
-//!         &mut self, env: &mut Env, rng: &mut R
-//!     ) {
-//!         let bid = env.level_2_data().bid_price;
-//!         let ask = env.level_2_data().ask_price;
-//!         let mid = (ask - bid) / 2;
-//!         let mid_price = bid + mid;
-//!         for _ in (0..self.n_agents) {
-//!             let side = rng.gen_bool(0.5);
-//!             match side {
-//!                 true => {
-//!                     let p = mid_price - self.offset;
-//!                     env.place_order(Side::Ask, self.vol, 101, Some(p));
-//!                 }
-//!                 false => {
-//!                     let p = mid_price + self.offset;
-//!                     env.place_order(Side::Bid, self.vol, 101, Some(p));
-//!                 }
-//!             }
-//!         }
-//!     }
-//! }
+//! // Initialise agent parameters
+//! let m_params = agents::MomentumParams {
+//!     tick_size: 2,
+//!     p_cancel: 0.1,
+//!     trade_vol: 100,
+//!     decay: 1.0,
+//!     demand: 5.0,
+//!     scale: 0.5,
+//!     order_ratio: 1.0,
+//!     price_dist_mu: 0.0,
+//!     price_dist_sigma: 10.0,
+//! };
+//!
+//! let n_params = agents::NoiseAgentParams{
+//!     tick_size: 2,
+//!     p_limit: 0.2,
+//!     p_market: 0.2,
+//!     p_cancel: 0.1,
+//!     trade_vol: 100,
+//!     price_dist_mu: 0.0,
+//!     price_dist_sigma: 1.0,
+//! };
+//!
+//! let mut agents = SimAgents {
+//!     a: agents::MomentumAgent::new(0, 10, m_params),
+//!     b: agents::NoiseAgent::new(10, 20, n_params),
+//! };
 //!
 //! // Initialise the environment and agents
 //! let mut env = Env::new(0, 1, 1_000_000, true);
-//! let mut agents = Agents{offset: 6, vol: 50, n_agents: 10};
 //!
 //! // Run the simulation
 //! sim_runner(&mut env, &mut agents, 101, 50, true);
 //!
-//! // Get history of prices over the course of the simulation
-//! let price_data = env.get_prices();
+//! // Get history of level 2 data over the course of the simulation
+//! let data = env.level_2_data();
 //! ```
 //!
 //! # Implementing Your Own Agents
 //!
 //! For use in [sim_runner] simulation agents should implement the [agents::AgentSet]
 //! trait. For a set of homogeneous agents (i.e. all the agents are the
-//! same type) this can be implemented directly as in the above example.
+//! same type) this can be implemented directly.
 //!
 //! For a mixture of agent types, the [agents::Agents] macro can be used
 //! to automatically implement [agents::AgentSet] for a struct of agents

@@ -7,13 +7,21 @@ use rand::Rng;
 use rand::RngCore;
 use rand_distr::LogNormal;
 
+/// Noise agent parameters
 pub struct NoiseAgentParams {
+    /// Tick-size of the market
     pub tick_size: Price,
+    /// Probability of placing a limit order
     pub p_limit: f32,
+    /// Probability of placing a market order
     pub p_market: f32,
+    /// Probability of cancelling a live order
     pub p_cancel: f32,
+    /// Size of trades that are placed
     pub trade_vol: Vol,
+    /// Log-normal price distribution mean
     pub price_dist_mu: f64,
+    /// Log-normal price distribution width
     pub price_dist_sigma: f64,
 }
 

@@ -1,6 +1,8 @@
 use proc_macro::TokenStream;
 use quote::quote;
 
+extern crate self as bourse_de;
+
 /// Agent iteration macro
 ///
 /// Implements the `AgentSet` trait for a struct
@@ -65,8 +67,8 @@ fn impl_agents_macro(ast: &syn::DeriveInput) -> TokenStream {
     }
 
     let output = quote! {
-        impl AgentSet for #name {
-            fn update<R: rand::RngCore>(&mut self, env: &mut Env, rng: &mut R) {
+        impl bourse_de::agents::AgentSet for #name {
+            fn update<R: rand::RngCore>(&mut self, env: &mut bourse_de::Env, rng: &mut R) {
                 #call_tokens
             }
         }

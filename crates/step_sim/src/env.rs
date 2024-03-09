@@ -106,6 +106,7 @@ pub struct Env<const N: usize = 10> {
 }
 
 impl<const N: usize> Env<N> {
+    /// Number of price levels recorded during simulation
     pub const N_LEVELS: usize = N;
 
     /// Initialise an empty environment
@@ -113,6 +114,7 @@ impl<const N: usize> Env<N> {
     /// # Arguments
     ///
     /// - `start_time` - Simulation start time
+    /// - `tick_size` - Market tick size
     /// - `step_size` - Simulated step time-length
     /// - `trading` - Flag if `true` orders will be matched,
     ///   otherwise no trades will take place

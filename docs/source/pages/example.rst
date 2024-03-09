@@ -37,16 +37,15 @@ define an ``update`` method that takes a
 :py:class:`numpy.random.Generator` and
 :py:class:`bourse.core.StepEnv` as arguments.
 
-In this example an agent places a randomly order if it
+In this example an agent places a random order if it
 does not have an existing one, and otherwise attempts to
-cancel its current order.
+cancel its existing order.
 
 We then initialise an environment and set of agents
 
 .. testcode:: random_example
 
    seed = 101
-   n_steps = 50
 
    agents = [RandomAgent(i, (10, 100)) for i in range(50)]
    env = bourse.core.StepEnv(seed, 0, 1, 100_000)
@@ -55,6 +54,8 @@ We can then use :py:meth:`bourse.step_sim.run` to run the
 simulation
 
 .. testcode:: random_example
+
+   n_steps = 50
 
    market_data = bourse.step_sim.run(env, agents, n_steps, seed)
 
