@@ -16,13 +16,17 @@ Orderbook
 ---------
 
 An orderbook is initialised with a start time
-(this is the time used to record events)
+(this is the time used to record events) and a
+tick-size
 
 .. testcode:: book_usage
 
    import bourse
 
-   book = bourse.core.OrderBook(0, 1)
+   start_time = 0
+   tick_size = 1
+
+   book = bourse.core.OrderBook(start_time, tick_size)
 
 The state of the orderbook an then be directly
 updated, for example placing a limit bid order
@@ -77,7 +81,7 @@ Discrete Event Simulation Environment
 -------------------------------------
 
 A discrete event simulation environment can be initialised from
-a random seed, start-time, and step-size (i.e. how
+a random seed, start-time, tick-size, and step-size (i.e. how
 long in time each simulated step is)
 
 .. testcode:: sim_usage
@@ -85,8 +89,11 @@ long in time each simulated step is)
    import bourse
 
    seed = 101
+   start_time = 0
+   tick_size = 2
    step_size = 100_000
-   env = bourse.core.StepEnv(seed, 0, 1, step_size)
+
+   env = bourse.core.StepEnv(seed, start_time, tick_size, step_size)
 
 The state of the simulation is updated in discrete
 steps, with transactions submitted to a queue to
