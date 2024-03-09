@@ -30,10 +30,11 @@ pub struct MomentumParams {
     pub price_dist_sigma: f64,
 }
 
-/// Agent that places trades conditioned on price history
+/// Agents that place trades conditioned on price history
 ///
-/// A group of agents that track trends in price movements
-/// the momentum of the price is updated each step
+/// A group of agents that track trends in price movements.
+///
+/// The momentum of the price, `M`, is updated each step
 ///
 /// ```notrust
 /// M = m * (1 - decay) + decay * (P - p)
@@ -54,7 +55,7 @@ pub struct MomentumParams {
 /// p_limit = p_market * order_ratio
 /// ```
 ///
-//  Agents will then place a buy/sell order if `M` is
+/// Agents will then place a buy/sell order if `M` is
 /// greater/less than 0.0 respectively.
 ///
 /// Each step the agent(s)

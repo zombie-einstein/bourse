@@ -54,6 +54,16 @@ pub struct RandomAgents {
 }
 
 impl RandomAgents {
+    /// Initialise a set of random agents
+    ///
+    /// # Arguments
+    ///
+    /// - `n_agents` - Number of agents in the set
+    /// - `tick_range` - Range of ticks to place orders over
+    /// - `vol_range` - Order volume range to sample from
+    /// - `tick_size` - Market tick size
+    /// - `activity_rate` - Agent activity rate
+    ///
     pub fn new(
         n_agents: usize,
         tick_range: (Price, Price),

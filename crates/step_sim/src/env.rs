@@ -114,6 +114,7 @@ impl<const N: usize> Env<N> {
     /// # Arguments
     ///
     /// - `start_time` - Simulation start time
+    /// - `tick_size` - Market tick size
     /// - `step_size` - Simulated step time-length
     /// - `trading` - Flag if `true` orders will be matched,
     ///   otherwise no trades will take place

@@ -29,6 +29,9 @@
 //! updating, and have no guarantee of the ordering
 //! of transactions.
 //!
+//! See [bourse_book] for details of the limit
+//! order-book used in this environment.
+//!
 //! # Examples
 //!
 //! ```
