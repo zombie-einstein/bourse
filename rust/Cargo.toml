@@ -11,6 +11,7 @@ doctest = false
 [dependencies]
 pyo3 = { version="0.20.3", features = ["extension-module"] }
 numpy = "0.20.0"
+ndarray = "0.15.6"
 rand_xoshiro.workspace = true
 
 bourse-book = { path = "../crates/order_book" }

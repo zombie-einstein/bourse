@@ -201,7 +201,7 @@ impl OrderBook {
     ///       no-trade period)
     ///
     pub fn order_status(&self, order_id: OrderId) -> u8 {
-        types::status_to_int(&self.0.order(order_id).status)
+        self.0.order(order_id).status.into()
     }
 
     /// place_order(bid: bool, vol: int, trader_id: int, price: int = None) -> int

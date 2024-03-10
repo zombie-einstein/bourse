@@ -1,9 +1,10 @@
 use std::array;
 use std::collections::HashMap;
 
-use super::types::{cast_order, cast_trade, status_to_int, PyOrder, PyTrade};
+use super::types::{cast_order, cast_trade, PyOrder, PyTrade};
 use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_de::Env as BaseEnv;
+use ndarray::Zip;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -156,7 +157,7 @@ impl StepEnv {
     ///       no-trade period)
     ///
     pub fn order_status(&self, order_id: OrderId) -> u8 {
-        status_to_int(&self.env.get_orderbook().order(order_id).status)
+        self.env.get_orderbook().order(order_id).status.into()
     }
 
     /// Enable trading
@@ -350,6 +351,56 @@ impl StepEnv {
             touch_order_counts.0.to_pyarray(py),
             touch_order_counts.1.to_pyarray(py),
         )
+    }
+
+    /// submit_limit_order_array(orders: tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray])
+    ///
+    /// Submit new limit orders from a Numpy array
+    ///
+    /// Parameters
+    /// ----------
+    /// orders: tuple[np.array, np.array, np.array, np.array]
+    ///     Tuple of numpy arrays containing
+    ///
+    ///     - Order side as a bool (``True`` if bid-side)
+    ///     - Order volumes
+    ///     - Trader ids
+    ///     - Order prices
+    ///
+    pub fn submit_limit_order_array<'a>(
+        &mut self,
+        orders: (
+            &'a PyArray1<bool>,
+            &'a PyArray1<Vol>,
+            &'a PyArray1<TraderId>,
+            &'a PyArray1<Price>,
+        ),
+    ) -> PyResult<()> {
+        let orders = (
+            orders.0.readonly(),
+            orders.1.readonly(),
+            orders.2.readonly(),
+            orders.3.readonly(),
+        );
+
+        let orders = (
+            orders.0.as_array(),
+            orders.1.as_array(),
+            orders.2.as_array(),
+            orders.3.as_array(),
+        );
+
+        Zip::from(orders.0)
+            .and(orders.1)
+            .and(orders.2)
+            .and(orders.3)
+            .for_each(|side, vol, id, price| {
+                self.env
+                    .place_order((*side).into(), *vol, *id, Some(*price))
+                    .unwrap();
+            });
+
+        Ok(())
     }
 
     /// get_trade_volumes() -> numpy.ndarray

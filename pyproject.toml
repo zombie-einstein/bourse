@@ -61,6 +61,7 @@ dependencies = [
   "jupyter >= 1.0.0",
   "matplotlib >= 3.8.2",
   "pyarrow >= 14.0.2",
+  "numba >= 0.59.0",
 ]
 
 [tool.hatch.envs.jupyter.scripts]
