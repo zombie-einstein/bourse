@@ -390,6 +390,7 @@ impl StepEnv {
             orders.3.as_array(),
         );
 
+        // TODO: would be nice to return better error here
         Zip::from(orders.0)
             .and(orders.1)
             .and(orders.2)
@@ -399,6 +400,26 @@ impl StepEnv {
                     .place_order((*side).into(), *vol, *id, Some(*price))
                     .unwrap();
             });
+
+        Ok(())
+    }
+
+    /// submit_cancel_order_array(order_ids: numpy.ndarray)
+    ///
+    /// Submit a Numpy array of order ids to cancel
+    ///
+    /// Parameters
+    /// ----------
+    /// order_ids: np.array
+    ///     Numpy array of order-ids to be cancelled
+    ///
+    pub fn submit_cancel_order_array(&mut self, order_ids: &'_ PyArray1<OrderId>) -> PyResult<()> {
+        let order_ids = order_ids.readonly();
+        let order_ids = order_ids.as_array();
+
+        order_ids.for_each(|id| {
+            self.env.cancel_order(*id);
+        });
 
         Ok(())
     }
