@@ -89,3 +89,77 @@ class RandomAgent(BaseAgent):
                 self.order_id = env.place_order(
                     side, vol, self.i, price=tick * self.tick_size
                 )
+
+
+class NumpyRandomAgents(BaseAgent):
+    """
+    Simple agent set that places random orders via Numpy arrays
+
+    Agents that place random orders each step of the simulation, new
+    orders are returned as a tuple of Numpy arrays. These orders
+    can then be submitted to a discrete event environment using
+    :py:meth:`bourse.core.StepEnv.submit_limit_order_array`.
+
+    This agent type is designed to represent a group of agents all
+    placing individual orders at each step (rather than a single agent).
+    """
+
+    def __init__(
+        self,
+        n_agents: int,
+        tick_range: typing.Tuple[int, int],
+        vol_range: typing.Tuple[int, int],
+        tick_size: int,
+    ):
+        """
+        Initialise NumpyRandomAgents
+
+        Parameters
+        ----------
+        n_agents: int
+            Number of agents in the set
+        tick_range: tuple[int, int]
+            Tick range to sample from.
+        vol_range: tuple[int, int]
+            Volume range to sample from.
+        tick_size: int
+            Size of a market tick
+        """
+        self.n_agents = n_agents
+        self.tick_range = tick_range
+        self.vol_range = vol_range
+        self.tick_size = tick_size
+
+    def update(
+        self, rng: np.random.Generator, env: core.StepEnv
+    ) -> typing.Tuple[typing.Tuple, np.array]:
+        """
+        Update the agents, sampling new orders to place
+
+        Parameters
+        ----------
+        rng: numpy.random.Generator
+            Numpy random generator.
+        env: bourse.core.StepEnv
+            Discrete event simulation environment.
+
+        Returns
+        -------
+        tuple
+            Tuple containing:
+
+                - A tuple of arrays representing new orders to be placed
+                - An array of orders to cancel (always empty)
+        """
+        sides = rng.choice([True, False], size=self.n_agents).astype(bool)
+        vols = rng.integers(*self.tick_range, size=self.n_agents, dtype=np.uint32)
+        ids = np.arange(self.n_agents, dtype=np.uint32)
+        prices = (
+            rng.integers(*self.tick_range, size=self.n_agents, dtype=np.uint32)
+            * self.tick_size
+        )
+
+        # No cancellations created
+        cancellations = np.array([], dtype=np.uint64)
+
+        return (sides, vols, ids, prices), cancellations

@@ -55,3 +55,15 @@ def test_cancel_orders_from_array():
     assert env.bid_ask == (19, 23)
     assert env.best_bid_vol_and_orders == (12, 1)
     assert env.best_ask_vol_and_orders == (12, 1)
+
+
+def test_numpy_random_agent():
+
+    env = bourse.core.StepEnv(101, 0, 1, 100_000)
+    agents = bourse.step_sim.agents.NumpyRandomAgents(20, (10, 60), (10, 20), 2)
+    rng = np.random.default_rng(101)
+
+    orders, cancellations = agents.update(rng, None)
+
+    env.submit_limit_order_array(orders)
+    env.submit_cancel_order_array(cancellations)
