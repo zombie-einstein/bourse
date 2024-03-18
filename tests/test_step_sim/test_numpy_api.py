@@ -21,6 +21,20 @@ def test_submit_limit_orders_numpy():
     assert env.best_bid_vol_and_orders == (21, 2)
     assert env.best_ask_vol_and_orders == (21, 2)
 
+    assert np.array_equal(
+        env.level_1_data_array(),
+        np.array([20, 22, 33, 33, 21, 2, 21, 2], dtype=np.uint32),
+    )
+
+    l2_data = env.level_2_data_array()
+
+    assert l2_data.shape == (44,)
+    assert np.array_equal(
+        l2_data[:12],
+        np.array([20, 22, 33, 33, 21, 2, 21, 2, 12, 1, 12, 1], dtype=np.uint32),
+    )
+    assert np.array_equal(l2_data[12:], np.zeros(32, dtype=np.uint32))
+
 
 def test_raise_from_bad_order():
 

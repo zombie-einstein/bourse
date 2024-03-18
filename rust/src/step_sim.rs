@@ -424,6 +424,70 @@ impl StepEnv {
         Ok(())
     }
 
+    /// level_1_data_array() -> numpy.ndarray
+    ///
+    /// Get current level 1 data as a Numpy array
+    ///
+    /// Returns a Numpy array with values at indices:
+    ///
+    /// - 0: Bid touch price
+    /// - 1: Ask touch price
+    /// - 2: Bid total volume
+    /// - 3: Ask total volume
+    /// - 4: Bid touch volume
+    /// - 5: Number of buy orders at touch
+    /// - 6: Ask touch volume
+    /// - 7: Number of sell orders at touch
+    ///
+    pub fn level_1_data_array<'a>(&self, py: Python<'a>) -> &'a PyArray1<u32> {
+        let data = self.env.level_2_data();
+        let data_vec = [
+            data.bid_price,
+            data.ask_price,
+            data.ask_vol,
+            data.bid_vol,
+            data.bid_price_levels[0].0,
+            data.bid_price_levels[0].1,
+            data.ask_price_levels[0].0,
+            data.ask_price_levels[0].1,
+        ];
+
+        data_vec.to_pyarray(py)
+    }
+
+    /// level_2_data_array() -> numpy.ndarray
+    ///
+    /// Get current level 2 data as a Numpy array
+    ///
+    /// Returns a Numpy array with values at indices:
+    ///
+    /// - 0: Bid touch price
+    /// - 1: Ask touch price
+    /// - 2: Bid total volume
+    /// - 3: Ask total volume
+    /// - 4: Bid touch volume
+    ///
+    /// the following 40 values are data for each
+    /// price level below/above the touch
+    ///
+    /// - Bid volume at level
+    /// - Number of buy orders at level
+    /// - Ask volume at level
+    /// - Number of sell orders at level
+    ///
+    pub fn level_2_data_array<'a>(&self, py: Python<'a>) -> &'a PyArray1<u32> {
+        let data = self.env.level_2_data();
+        let mut data_vec = vec![data.bid_price, data.ask_price, data.ask_vol, data.bid_vol];
+        for i in 0..10 {
+            data_vec.push(data.bid_price_levels[i].0);
+            data_vec.push(data.bid_price_levels[i].1);
+            data_vec.push(data.ask_price_levels[i].0);
+            data_vec.push(data.ask_price_levels[i].1);
+        }
+
+        data_vec.to_pyarray(py)
+    }
+
     /// get_trade_volumes() -> numpy.ndarray
     ///
     /// Get trade volume history
