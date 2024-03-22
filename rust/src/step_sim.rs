@@ -369,13 +369,14 @@ impl StepEnv {
     ///
     pub fn submit_limit_order_array<'a>(
         &mut self,
+        py: Python<'a>,
         orders: (
             &'a PyArray1<bool>,
             &'a PyArray1<Vol>,
             &'a PyArray1<TraderId>,
             &'a PyArray1<Price>,
         ),
-    ) -> PyResult<()> {
+    ) -> PyResult<&'a PyArray1<OrderId>> {
         let orders = (
             orders.0.readonly(),
             orders.1.readonly(),
@@ -391,17 +392,17 @@ impl StepEnv {
         );
 
         // TODO: would be nice to return better error here
-        Zip::from(orders.0)
+        let order_ids = Zip::from(orders.0)
             .and(orders.1)
             .and(orders.2)
             .and(orders.3)
-            .for_each(|side, vol, id, price| {
+            .map_collect(|side, vol, id, price| {
                 self.env
                     .place_order((*side).into(), *vol, *id, Some(*price))
-                    .unwrap();
+                    .unwrap()
             });
 
-        Ok(())
+        Ok(order_ids.to_pyarray(py))
     }
 
     /// submit_cancel_order_array(order_ids: numpy.ndarray)
