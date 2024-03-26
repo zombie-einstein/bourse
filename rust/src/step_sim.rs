@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use super::types::{cast_order, cast_trade, PyOrder, PyTrade};
 use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
 use bourse_de::Env as BaseEnv;
-use ndarray::Zip;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -351,78 +350,6 @@ impl StepEnv {
             touch_order_counts.0.to_pyarray(py),
             touch_order_counts.1.to_pyarray(py),
         )
-    }
-
-    /// submit_limit_order_array(orders: tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray])
-    ///
-    /// Submit new limit orders from a Numpy array
-    ///
-    /// Parameters
-    /// ----------
-    /// orders: tuple[np.array, np.array, np.array, np.array]
-    ///     Tuple of numpy arrays containing
-    ///
-    ///     - Order side as a bool (``True`` if bid-side)
-    ///     - Order volumes
-    ///     - Trader ids
-    ///     - Order prices
-    ///
-    pub fn submit_limit_order_array<'a>(
-        &mut self,
-        py: Python<'a>,
-        orders: (
-            &'a PyArray1<bool>,
-            &'a PyArray1<Vol>,
-            &'a PyArray1<TraderId>,
-            &'a PyArray1<Price>,
-        ),
-    ) -> PyResult<&'a PyArray1<OrderId>> {
-        let orders = (
-            orders.0.readonly(),
-            orders.1.readonly(),
-            orders.2.readonly(),
-            orders.3.readonly(),
-        );
-
-        let orders = (
-            orders.0.as_array(),
-            orders.1.as_array(),
-            orders.2.as_array(),
-            orders.3.as_array(),
-        );
-
-        // TODO: would be nice to return better error here
-        let order_ids = Zip::from(orders.0)
-            .and(orders.1)
-            .and(orders.2)
-            .and(orders.3)
-            .map_collect(|side, vol, id, price| {
-                self.env
-                    .place_order((*side).into(), *vol, *id, Some(*price))
-                    .unwrap()
-            });
-
-        Ok(order_ids.to_pyarray(py))
-    }
-
-    /// submit_cancel_order_array(order_ids: numpy.ndarray)
-    ///
-    /// Submit a Numpy array of order ids to cancel
-    ///
-    /// Parameters
-    /// ----------
-    /// order_ids: np.array
-    ///     Numpy array of order-ids to be cancelled
-    ///
-    pub fn submit_cancel_order_array(&mut self, order_ids: &'_ PyArray1<OrderId>) -> PyResult<()> {
-        let order_ids = order_ids.readonly();
-        let order_ids = order_ids.as_array();
-
-        order_ids.for_each(|id| {
-            self.env.cancel_order(*id);
-        });
-
-        Ok(())
     }
 
     /// level_1_data_array() -> numpy.ndarray

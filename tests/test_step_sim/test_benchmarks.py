@@ -15,6 +15,11 @@ def env():
 
 
 @pytest.fixture
+def numpy_env():
+    return bourse.core.StepEnvNumpy(SEED, 0, TiCK_SIZE, 100_000)
+
+
+@pytest.fixture
 def agents():
     return [
         RandomAgent(i, 0.5, (10, 100), (20, 50), TiCK_SIZE) for i in range(N_AGENTS)
@@ -39,8 +44,8 @@ def run_numpy_sim(n_steps, seed, e, a):
     for _ in range(n_steps):
         for agent in a:
             orders, cancels = agent.update(rng, e)
-            e.submit_limit_order_array(orders)
-            e.submit_cancel_order_array(cancels)
+            e.submit_limit_orders(orders)
+            e.submit_cancellations(cancels)
 
 
 def test_simulation_benchmark(benchmark, env, agents):
@@ -49,7 +54,7 @@ def test_simulation_benchmark(benchmark, env, agents):
     benchmark(run_sim, n_steps, seed, env, agents)
 
 
-def test_numpy_simulation_benchmark(benchmark, env, numpy_agents):
+def test_numpy_simulation_benchmark(benchmark, numpy_env, numpy_agents):
     n_steps = 100
     seed = 101
-    benchmark(run_numpy_sim, n_steps, seed, env, numpy_agents)
+    benchmark(run_numpy_sim, n_steps, seed, numpy_env, numpy_agents)

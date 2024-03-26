@@ -1,4 +1,5 @@
 use bourse_de::types::{Nanos, Order, OrderId, Price, Trade, TraderId, Vol};
+use numpy::PyArray1;
 
 pub type PyTrade = (Nanos, bool, Price, Vol, OrderId, OrderId);
 
@@ -28,3 +29,12 @@ pub fn cast_order(order: &Order) -> PyOrder {
         order.order_id,
     )
 }
+
+pub type NumpyInstructions<'a> = (
+    &'a PyArray1<u32>,
+    &'a PyArray1<bool>,
+    &'a PyArray1<Vol>,
+    &'a PyArray1<TraderId>,
+    &'a PyArray1<Price>,
+    &'a PyArray1<OrderId>,
+);
