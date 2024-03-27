@@ -44,12 +44,10 @@ html_theme = "sphinx_immaterial"
 
 html_theme_options = {
     "repo_url": "https://github.com/zombie-einstein/bourse",
-    "icon": {
-        "repo": "fontawesome/brands/github",
-    },
+    "icon": {"repo": "fontawesome/brands/github", "logo": "material/chart-line"},
     "palette": {
         "scheme": "slate",
-        "primary": "teal",
+        "primary": "black",
     },
     "toc_title_is_page_title": True,
 }
@@ -82,4 +80,7 @@ python_apigen_default_groups = [
     (r"class:.*StepEnv.*", "step_env_class"),
     (r"method:.*StepEnv.*", "StepEnv Methods"),
     (r"attribute:.*StepEnv.*", "StepEnv Attributes"),
+    (r"class:.*StepEnvNumpy.*", "step_env_numpy_class"),
+    (r"method:.*StepEnvNumpy.*", "StepEnvNumpy Methods"),
+    (r"attribute:.*StepEnvNumpy.*", "StepEnvNumpy Attributes"),
 ]

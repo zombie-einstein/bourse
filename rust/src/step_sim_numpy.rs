@@ -49,9 +49,9 @@ use rand_xoshiro::Xoroshiro128StarStar;
 ///    order_ids = env.submit_limit_orders(
 ///        (
 ///            np.array([True, False]),
-///            np.array([10, 20]),
-///            np.array([101, 202]),
-///            np.array([50, 55]),
+///            np.array([10, 20], dtype=np.uint32),
+///            np.array([101, 202], dtype=np.uint32),
+///            np.array([50, 55], dtype=np.uint32),
 ///        ),
 ///    )
 ///
@@ -219,10 +219,10 @@ impl StepEnvNumpy {
     ///         - ``1``: New order
     ///         - ``2``: Cancel order
     ///
-    ///     - Order sides (as bool, ``True`` for bid side) (used for new order)
-    ///     - Trader ids (used for new order)
-    ///     - Order prices (used for new order)
-    ///     - Order price (used for new order)
+    ///     - Order sides (as bool, ``True`` for bid side) (used for new orders)
+    ///     - Order volumes (used for new orders)
+    ///     - Trader ids (used for new orders)
+    ///     - Order prices (used for new orders)
     ///     - Order id (used for cancellations)
     ///
     /// Returns
