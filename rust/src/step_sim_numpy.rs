@@ -1,9 +1,9 @@
 use std::array;
 use std::collections::HashMap;
 
-use super::types::{cast_order, cast_trade, PyOrder, PyTrade};
-use bourse_book::types::{Nanos, OrderCount, OrderId, Price, Side, TraderId, Vol};
-use bourse_de::Env as BaseEnv;
+use super::types::{cast_order, cast_trade, NumpyInstructions, PyOrder, PyTrade};
+use bourse_book::types::{Nanos, OrderId, Price, TraderId, Vol};
+use bourse_de::{Env as BaseEnv, OrderError};
 use numpy::{PyArray1, ToPyArray};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -24,11 +24,15 @@ use rand_xoshiro::Xoroshiro128StarStar;
 /// rather they do by submitting transactions
 /// to be processed.
 ///
+/// This environment returns data and receives
+/// instructions via Numpy arrays.
+///
 /// Examples
 /// --------
 ///
-/// .. testcode:: step_sim_docstring
+/// .. testcode:: step_sim_numpy_docstring
 ///
+///    import numpy as np
 ///    import bourse
 ///
 ///    seed = 101
@@ -36,30 +40,37 @@ use rand_xoshiro::Xoroshiro128StarStar;
 ///    tick_size = 1
 ///    step_size = 1000
 ///
-///    env = bourse.core.StepEnv(
+///    env = bourse.core.StepEnvNumpy(
 ///        seed, start_time, tick_size, step_size
 ///    )
 ///
-///    # Create an order to be placed in the
-///    # next update
-///    order_id = env.place_order(
-///        True, 100, 99, price=50
+///    # Submit orders via Numpy arrays
+///    order_ids = env.submit_limit_orders(
+///        (
+///            np.array([True, False]),
+///            np.array([10, 20], dtype=np.uint32),
+///            np.array([101, 202], dtype=np.uint32),
+///            np.array([50, 55], dtype=np.uint32),
+///        ),
 ///    )
 ///
 ///    # Update the environment
 ///    env.step()
 ///
-///    # Get price history data
-///    bid_price, ask_prices = env.get_prices()
+///    # Cancel orders
+///    env.submit_cancellations(order_ids)
+///
+///    # Get level-2 data history
+///    level_2_data = env.get_market_data()
 ///
 #[pyclass]
-pub struct StepEnv {
+pub struct StepEnvNumpy {
     env: BaseEnv,
     rng: Xoroshiro128StarStar,
 }
 
 #[pymethods]
-impl StepEnv {
+impl StepEnvNumpy {
     #[new]
     #[pyo3(signature = (seed, start_time, tick_size, step_size, trading=true))]
     pub fn new(
@@ -72,91 +83,6 @@ impl StepEnv {
         let env = BaseEnv::new(start_time, tick_size, step_size, trading);
         let rng = Xoroshiro128StarStar::seed_from_u64(seed);
         Ok(Self { env, rng })
-    }
-
-    /// int: Current simulated time
-    #[getter]
-    pub fn time(&self) -> Nanos {
-        self.env.get_orderbook().get_time()
-    }
-
-    /// int: Current total ask side volume
-    #[getter]
-    pub fn ask_vol(&self) -> Vol {
-        self.env.level_2_data().ask_vol
-    }
-
-    /// int: Current ask side touch volume
-    #[getter]
-    pub fn best_ask_vol(&mut self) -> Vol {
-        self.env.level_2_data().ask_price_levels[0].0
-    }
-
-    /// tuple[int, int]: Current ask touch volume and order count
-    #[getter]
-    pub fn best_ask_vol_and_orders(&self) -> (Vol, OrderCount) {
-        self.env.level_2_data().ask_price_levels[0]
-    }
-
-    /// int: Current total bid side volume
-    #[getter]
-    pub fn bid_vol(&self) -> Vol {
-        self.env.level_2_data().bid_vol
-    }
-
-    /// int: Current bid side touch volume
-    #[getter]
-    pub fn best_bid_vol(&mut self) -> Vol {
-        self.env.level_2_data().bid_price_levels[0].0
-    }
-
-    /// tuple[int, int]: Current bid touch volume and order count
-    #[getter]
-    pub fn best_bid_vol_and_orders(&self) -> (Vol, OrderCount) {
-        self.env.level_2_data().bid_price_levels[0]
-    }
-
-    /// int: Trade volume in the last step
-    #[getter]
-    pub fn trade_vol(&self) -> Vol {
-        self.env.get_orderbook().get_trade_vol()
-    }
-
-    /// tuple[int, int]: Current bid-ask prices
-    #[getter]
-    pub fn bid_ask(&mut self) -> (Price, Price) {
-        (
-            self.env.level_2_data().bid_price,
-            self.env.level_2_data().ask_price,
-        )
-    }
-
-    /// order_status(order_id: int) -> int
-    ///
-    /// Get the status of an order
-    ///
-    /// Parameters
-    /// ----------
-    /// order_id: int
-    ///     Id of the order to query.
-    ///
-    /// Returns
-    /// -------
-    /// int
-    ///     Status of the order as an integer where:
-    ///
-    ///     - ``0 = New`` Order has not been placed
-    ///       on the market
-    ///     - ``1 = Active`` Order is on the market
-    ///     - ``2 = Filled`` Order has been filled
-    ///     - ``3 = Cancelled`` Order has been
-    ///       cancelled
-    ///     - ``4 = Rejected`` Order has been
-    ///       rejected (e.g. a market order in a
-    ///       no-trade period)
-    ///
-    pub fn order_status(&self, order_id: OrderId) -> u8 {
-        self.env.get_orderbook().order(order_id).status.into()
     }
 
     /// Enable trading
@@ -202,174 +128,171 @@ impl StepEnv {
         Ok(())
     }
 
-    /// place_order(bid: bool, vol: int, trader_id: int, price: int = None) -> int
+    /// submit_limit_orders(orders: tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray])
     ///
-    /// Submit a new-order transaction
-    ///
-    /// Creates a new order and submit an instruction
-    /// to place the order on the market.
+    /// Submit new limit orders from a Numpy array
     ///
     /// Parameters
     /// ----------
-    /// bid: bool
-    ///     If ``True`` the order will be placed on the
-    ///     bid side.
-    /// vol: int
-    ///     Volume of the order.
-    /// trader_id: int
-    ///     Id of the agent/trader placing the order.
-    /// price: int, optional
-    ///     Limit price of the order, if omitted then
-    ///     the order will be treated as a market order.
+    /// orders: tuple[np.array, np.array, np.array, np.array]
+    ///     Tuple of numpy arrays containing
     ///
-    #[pyo3(signature = (bid, vol, trader_id, price=None))]
-    pub fn place_order(
+    ///     - Order side as a bool (``True`` if bid-side)
+    ///     - Order volumes
+    ///     - Trader ids
+    ///     - Order prices
+    ///
+    pub fn submit_limit_orders<'a>(
         &mut self,
-        bid: bool,
-        vol: Vol,
-        trader_id: TraderId,
-        price: Option<Price>,
-    ) -> PyResult<OrderId> {
-        let side = match bid {
-            true => Side::Bid,
-            false => Side::Ask,
-        };
-        let order_id = self.env.place_order(side, vol, trader_id, price);
+        py: Python<'a>,
+        orders: (
+            &'a PyArray1<bool>,
+            &'a PyArray1<Vol>,
+            &'a PyArray1<TraderId>,
+            &'a PyArray1<Price>,
+        ),
+    ) -> PyResult<&'a PyArray1<OrderId>> {
+        let orders = (
+            orders.0.readonly(),
+            orders.1.readonly(),
+            orders.2.readonly(),
+            orders.3.readonly(),
+        );
 
-        match order_id {
-            Ok(i) => Ok(i),
+        let sides = orders.0.as_array();
+        let volumes = orders.1.as_array();
+        let trader_ids = orders.2.as_array();
+        let prices = orders.3.as_array();
+
+        let ids: Result<Vec<OrderId>, OrderError> = (0..orders.0.len())
+            .map(|i| {
+                self.env
+                    .place_order(sides[i].into(), volumes[i], trader_ids[i], Some(prices[i]))
+            })
+            .collect();
+
+        match ids {
+            Ok(i) => Ok(i.to_pyarray(py)),
             Err(e) => Err(PyValueError::new_err(e.to_string())),
         }
     }
 
-    /// cancel_order(order_id: int)
+    /// submit_cancellations(order_ids: numpy.ndarray)
     ///
-    /// Submit a cancel order transaction
+    /// Submit a Numpy array of order ids to cancel
     ///
     /// Parameters
     /// ----------
-    /// order_id: int
-    ///     Id of the order to cancel
+    /// order_ids: np.array
+    ///     Numpy array of order-ids to be cancelled
     ///
-    pub fn cancel_order(&mut self, order_id: OrderId) -> PyResult<()> {
-        self.env.cancel_order(order_id);
+    pub fn submit_cancellations(&mut self, order_ids: &'_ PyArray1<OrderId>) -> PyResult<()> {
+        let order_ids = order_ids.readonly();
+        let order_ids = order_ids.as_array();
+
+        order_ids.for_each(|id| {
+            self.env.cancel_order(*id);
+        });
+
         Ok(())
     }
 
-    /// modify_order(order_id: int, new_price: int = None, new_vol: int = None)
+    /// submit_instructions(instructions: tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray])
     ///
-    /// Submit an transaction to modify an order
-    ///
-    /// Submit a transaction to modify the price and/or
-    /// the volume of an order. Only reducing the volume
-    /// of an order us done in place, otherwise the order
-    /// will be replaced.
+    /// Submit market instructions as a tuple of Numpy arrays. This allows
+    /// new limit orders and cancellations to be submitted from a tuple
+    /// of Numpy arrays. Values that are not used for instructions (e.g.
+    /// order-id for a new-order) can be set to a default value that will be ignored.
     ///
     /// Parameters
     /// ----------
-    /// order_id: int
-    ///     Id of the order to modify
-    /// new_price: int, optional
-    ///     Price to change the order to, if omitted the
-    ///     order will remain at its original price.
-    /// new_vol: int, optional
-    ///     Volume to change the order to, if omitted the
-    ///     order will remain at its current volume.
+    /// instructions: tuple[np.array, np.array, np.array, np.array, np.array, np.array]
+    ///     Tuple of numpy arrays containing:
     ///
-    #[pyo3(signature = (order_id, new_price=None, new_vol=None))]
-    pub fn modify_order(
+    ///     - Instruction type, an integer representing
+    ///
+    ///       - ``0``: No change/null instruction
+    ///       - ``1``: New order
+    ///       - ``2``: Cancel order
+    ///
+    ///     - Order sides (as bool, ``True`` for bid side) (used for new orders)
+    ///     - Order volumes (used for new orders)
+    ///     - Trader ids (used for new orders)
+    ///     - Order prices (used for new orders)
+    ///     - Order id (used for cancellations)
+    ///
+    /// Returns
+    /// -------
+    /// np.ndarray
+    ///     Array of ids of newly placed orders. For cancellations
+    ///     or null instructions the default value of a max usize
+    ///     is returned.
+    ///
+    #[allow(clippy::type_complexity)]
+    pub fn submit_instructions<'a>(
         &mut self,
-        order_id: OrderId,
-        new_price: Option<Price>,
-        new_vol: Option<Vol>,
-    ) -> PyResult<()> {
-        self.env.modify_order(order_id, new_price, new_vol);
-        Ok(())
-    }
-
-    /// get_prices() -> tuple[numpy.ndarray, numpy.ndarray]
-    ///
-    /// Get touch price histories
-    ///
-    /// Returns
-    /// -------
-    /// tuple
-    ///     Tuple containing bid and ask price histories respectively.
-    ///
-    pub fn get_prices<'a>(&self, py: Python<'a>) -> (&'a PyArray1<Price>, &'a PyArray1<Price>) {
-        let prices = self.env.get_prices();
-        (prices.0.to_pyarray(py), prices.1.to_pyarray(py))
-    }
-
-    /// get_volumes() -> tuple[numpy.ndarray, numpy.ndarray]
-    ///
-    /// Get volume histories
-    ///
-    /// Returns
-    /// -------
-    /// tuple[np.array, np.array]
-    ///     Tuple containing histories of bid and ask volumes.
-    ///
-    pub fn get_volumes<'a>(&self, py: Python<'a>) -> (&'a PyArray1<Vol>, &'a PyArray1<Vol>) {
-        let volumes = self.env.get_volumes();
-        (volumes.0.to_pyarray(py), volumes.1.to_pyarray(py))
-    }
-
-    /// get_touch_volumes() -> tuple[numpy.ndarray, numpy.ndarray]
-    ///
-    /// Get touch volume histories
-    ///
-    /// Returns
-    /// -------
-    /// tuple[np.array, np.array]
-    ///     Tuple containing histories of bid and ask touch volumes.
-    ///
-    pub fn get_touch_volumes<'a>(&self, py: Python<'a>) -> (&'a PyArray1<Vol>, &'a PyArray1<Vol>) {
-        let touch_volumes = self.env.get_touch_volumes();
-        (
-            touch_volumes.0.to_pyarray(py),
-            touch_volumes.1.to_pyarray(py),
-        )
-    }
-
-    /// get_touch_order_counts() -> tuple[numpy.ndarray, numpy.ndarray]
-    ///
-    /// Get touch volume histories
-    ///
-    /// Returns
-    /// -------
-    /// tuple[np.array, np.array]
-    ///     Tuple containing histories of bid and ask touch volumes.
-    ///
-    pub fn get_touch_order_counts<'a>(
-        &self,
         py: Python<'a>,
-    ) -> (&'a PyArray1<OrderCount>, &'a PyArray1<OrderCount>) {
-        let touch_order_counts = self.env.get_touch_order_counts();
-        (
-            touch_order_counts.0.to_pyarray(py),
-            touch_order_counts.1.to_pyarray(py),
-        )
+        instructions: NumpyInstructions,
+    ) -> PyResult<&'a PyArray1<OrderId>> {
+        let instructions = (
+            instructions.0.readonly(),
+            instructions.1.readonly(),
+            instructions.2.readonly(),
+            instructions.3.readonly(),
+            instructions.4.readonly(),
+            instructions.5.readonly(),
+        );
+
+        let action = instructions.0.as_array();
+        let sides = instructions.1.as_array();
+        let volumes = instructions.2.as_array();
+        let trader_ids = instructions.3.as_array();
+        let prices = instructions.4.as_array();
+        let order_ids = instructions.5.as_array();
+
+        let ids: Result<Vec<OrderId>, OrderError> = (0..instructions.0.len())
+            .map(|i| match action[i] {
+                0 => Ok(OrderId::MAX),
+                1 => self.env.place_order(
+                    sides[i].into(),
+                    volumes[i],
+                    trader_ids[i],
+                    Some(prices[i]),
+                ),
+                2 => {
+                    self.env.cancel_order(order_ids[i]);
+                    Ok(OrderId::MAX)
+                }
+                _ => Ok(OrderId::MAX),
+            })
+            .collect();
+
+        match ids {
+            Ok(i) => Ok(i.to_pyarray(py)),
+            Err(e) => Err(PyValueError::new_err(e.to_string())),
+        }
     }
 
-    /// level_1_data_array() -> numpy.ndarray
+    /// level_1_data() -> numpy.ndarray
     ///
     /// Get current level 1 data as a Numpy array
     ///
     /// Returns a Numpy array with values at indices:
     ///
-    /// - 0: Bid touch price
-    /// - 1: Ask touch price
-    /// - 2: Bid total volume
-    /// - 3: Ask total volume
-    /// - 4: Bid touch volume
-    /// - 5: Number of buy orders at touch
-    /// - 6: Ask touch volume
-    /// - 7: Number of sell orders at touch
+    /// - 0: Trade volume (in the last step)
+    /// - 1: Bid touch price
+    /// - 2: Ask touch price
+    /// - 3: Bid total volume
+    /// - 4: Ask total volume
+    /// - 5: Bid touch volume
+    /// - 6: Number of buy orders at touch
+    /// - 7: Ask touch volume
+    /// - 8: Number of sell orders at touch
     ///
-    pub fn level_1_data_array<'a>(&self, py: Python<'a>) -> &'a PyArray1<u32> {
+    pub fn level_1_data<'a>(&self, py: Python<'a>) -> &'a PyArray1<u32> {
         let data = self.env.level_2_data();
         let data_vec = [
+            self.env.get_orderbook().get_trade_vol(),
             data.bid_price,
             data.ask_price,
             data.ask_vol,
@@ -383,17 +306,17 @@ impl StepEnv {
         data_vec.to_pyarray(py)
     }
 
-    /// level_2_data_array() -> numpy.ndarray
+    /// level_2_data() -> numpy.ndarray
     ///
     /// Get current level 2 data as a Numpy array
     ///
     /// Returns a Numpy array with values at indices:
     ///
-    /// - 0: Bid touch price
-    /// - 1: Ask touch price
-    /// - 2: Bid total volume
-    /// - 3: Ask total volume
-    /// - 4: Bid touch volume
+    /// - 0: Trade volume (in the last step)
+    /// - 1: Bid touch price
+    /// - 2: Ask touch price
+    /// - 3: Bid total volume
+    /// - 4: Ask total volume
     ///
     /// the following 40 values are data for each
     /// price level below/above the touch
@@ -403,9 +326,15 @@ impl StepEnv {
     /// - Ask volume at level
     /// - Number of sell orders at level
     ///
-    pub fn level_2_data_array<'a>(&self, py: Python<'a>) -> &'a PyArray1<u32> {
+    pub fn level_2_data<'a>(&self, py: Python<'a>) -> &'a PyArray1<u32> {
         let data = self.env.level_2_data();
-        let mut data_vec = vec![data.bid_price, data.ask_price, data.ask_vol, data.bid_vol];
+        let mut data_vec = vec![
+            self.env.get_orderbook().get_trade_vol(),
+            data.bid_price,
+            data.ask_price,
+            data.ask_vol,
+            data.bid_vol,
+        ];
         for i in 0..10 {
             data_vec.push(data.bid_price_levels[i].0);
             data_vec.push(data.bid_price_levels[i].1);
@@ -414,19 +343,6 @@ impl StepEnv {
         }
 
         data_vec.to_pyarray(py)
-    }
-
-    /// get_trade_volumes() -> numpy.ndarray
-    ///
-    /// Get trade volume history
-    ///
-    /// Returns
-    /// -------
-    /// np.ndarray
-    ///     Array tracking the trade volume at each simulation step.
-    ///
-    pub fn get_trade_volumes<'a>(&self, py: Python<'a>) -> &'a PyArray1<Vol> {
-        self.env.get_trade_vols().to_pyarray(py)
     }
 
     /// get_orders() -> list[tuple]
@@ -505,7 +421,7 @@ impl StepEnv {
     ///
     pub fn get_market_data<'a>(&self, py: Python<'a>) -> HashMap<String, &'a PyArray1<u32>> {
         let data = self.env.get_level_2_data_history();
-        let trade_volumes = self.get_trade_volumes(py);
+        let trade_volumes = self.env.get_trade_vols().to_pyarray(py);
 
         let bid_vols: [(String, &'a PyArray1<u32>); 10] = array::from_fn(|i| {
             (

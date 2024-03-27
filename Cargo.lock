@@ -38,6 +38,7 @@ version = "0.3.1"
 dependencies = [
  "bourse-book",
  "bourse-de",
+ "ndarray",
  "numpy",
  "pyo3",
  "rand_xoshiro",

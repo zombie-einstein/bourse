@@ -24,6 +24,24 @@ pub enum Side {
     Ask,
 }
 
+impl From<bool> for Side {
+    fn from(side: bool) -> Side {
+        match side {
+            true => Self::Bid,
+            false => Self::Ask,
+        }
+    }
+}
+
+impl From<Side> for bool {
+    fn from(side: Side) -> bool {
+        match side {
+            Side::Bid => true,
+            Side::Ask => false,
+        }
+    }
+}
+
 /// Order status
 #[derive(Clone, PartialEq, Eq, Copy, Debug, Serialize, Deserialize)]
 pub enum Status {
@@ -38,6 +56,18 @@ pub enum Status {
     /// Rejected, e.g. a market order
     /// placed in a no-trading period
     Rejected,
+}
+
+impl From<Status> for u8 {
+    fn from(status: Status) -> u8 {
+        match status {
+            Status::New => 0,
+            Status::Active => 1,
+            Status::Filled => 2,
+            Status::Cancelled => 3,
+            Status::Rejected => 4,
+        }
+    }
 }
 
 /// Order data

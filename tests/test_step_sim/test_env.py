@@ -116,7 +116,7 @@ def test_incorrect_price():
 
 
 def test_runner():
-    class TestAgent:
+    class TestAgent(bourse.step_sim.agents.BaseAgent):
         def __init__(self, side: bool, start_price: int):
             self.side = side
             self.start_price = start_price

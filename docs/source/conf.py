@@ -44,12 +44,10 @@ html_theme = "sphinx_immaterial"
 
 html_theme_options = {
     "repo_url": "https://github.com/zombie-einstein/bourse",
-    "icon": {
-        "repo": "fontawesome/brands/github",
-    },
+    "icon": {"repo": "fontawesome/brands/github", "logo": "material/chart-line"},
     "palette": {
         "scheme": "slate",
-        "primary": "teal",
+        "primary": "black",
     },
     "toc_title_is_page_title": True,
 }
@@ -59,8 +57,8 @@ python_apigen_order_tiebreaker = "alphabetical"
 python_apigen_modules = {
     "bourse.data_processing": "pages/generated/data_processing/",
     "bourse.step_sim": "pages/generated/step_sim/",
-    "bourse.step_sim.agents.base_agent": "pages/generated/step_sim/agents/base",
-    "bourse.step_sim.agents.random_agent": "pages/generated/step_sim/agents/random",
+    "bourse.step_sim.agents.base_agent": "pages/generated/step_sim/agents/base/",
+    "bourse.step_sim.agents.random_agent": "pages/generated/step_sim/agents/random/",
     "bourse.core": "pages/generated/core/",
 }
 
@@ -70,13 +68,22 @@ python_apigen_default_groups = [
     (r"class:.*BaseAgent.*", "base_agent_class"),
     (r"method:.*BaseAgent.*", "BaseAgent Methods"),
     (r"attribute:.*BaseAgent.*", "BaseAgent Attributes"),
+    (r"class:.*BaseNumpyAgent.*", "base_numpy_agent_class"),
+    (r"method:.*BaseNumpyAgent.*", "BaseNumpyAgent Methods"),
+    (r"attribute:.*BaseNumpyAgent.*", "BaseNumpyAgent Attributes"),
     (r"class:.*RandomAgent.*", "random_agent_class"),
     (r"method:.*RandomAgent.*", "RandomAgent Methods"),
     (r"attribute:.*RandomAgent.*", "RandomAgent Attributes"),
+    (r"class:.*NumpyRandomAgents.*", "n_random_agent_class"),
+    (r"method:.*NumpyRandomAgents.*", "NumpyRandomAgents Methods"),
+    (r"attribute:.*NumpyRandomAgents.*", "NumpyRandomAgents Attributes"),
     (r"class:.*OrderBook.*", "order_book_class"),
     (r"method:.*OrderBook.*", "OrderBook Methods"),
     (r"attribute:.*OrderBook.*", "OrderBook Attributes"),
     (r"class:.*StepEnv.*", "step_env_class"),
     (r"method:.*StepEnv.*", "StepEnv Methods"),
     (r"attribute:.*StepEnv.*", "StepEnv Attributes"),
+    (r"class:.*StepEnvNumpy.*", "step_env_numpy_class"),
+    (r"method:.*StepEnvNumpy.*", "StepEnvNumpy Methods"),
+    (r"attribute:.*StepEnvNumpy.*", "StepEnvNumpy Attributes"),
 ]
