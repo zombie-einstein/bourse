@@ -6,7 +6,7 @@ import typing
 import numpy as np
 
 from bourse import core
-from bourse.step_sim.agents import BaseAgent
+from bourse.step_sim.agents import BaseAgent, BaseNumpyAgent, InstructionArrays
 
 
 class RandomAgent(BaseAgent):
@@ -91,7 +91,7 @@ class RandomAgent(BaseAgent):
                 )
 
 
-class NumpyRandomAgents(BaseAgent):
+class NumpyRandomAgents(BaseNumpyAgent):
     """
     Simple agent set that places random orders via Numpy arrays
 
@@ -131,8 +131,8 @@ class NumpyRandomAgents(BaseAgent):
         self.tick_size = tick_size
 
     def update(
-        self, rng: np.random.Generator, env: core.StepEnv
-    ) -> typing.Tuple[typing.Tuple, np.array]:
+        self, rng: np.random.Generator, level_2_data: np.ndarray
+    ) -> InstructionArrays:
         """
         Update the agents, sampling new orders to place
 
@@ -140,16 +140,13 @@ class NumpyRandomAgents(BaseAgent):
         ----------
         rng: numpy.random.Generator
             Numpy random generator.
-        env: bourse.core.StepEnv
-            Discrete event simulation environment.
+        level_2_data: bourse.core.StepEnv
+            Level-2 market data
 
         Returns
         -------
         tuple
-            Tuple containing:
-
-                - A tuple of arrays representing new orders to be placed
-                - An array of orders to cancel (always empty)
+            Tuple containing new order instructions
         """
         sides = rng.choice([True, False], size=self.n_agents).astype(bool)
         vols = rng.integers(*self.tick_range, size=self.n_agents, dtype=np.uint32)
@@ -159,7 +156,11 @@ class NumpyRandomAgents(BaseAgent):
             * self.tick_size
         )
 
-        # No cancellations created
-        cancellations = np.array([], dtype=np.uint64)
-
-        return (sides, vols, ids, prices), cancellations
+        return (
+            np.ones(self.n_agents, dtype=np.uint32),
+            sides,
+            vols,
+            ids,
+            prices,
+            np.zeros(self.n_agents, dtype=np.uint64),
+        )

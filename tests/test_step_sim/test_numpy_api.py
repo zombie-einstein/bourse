@@ -77,7 +77,6 @@ def test_numpy_random_agent():
     agents = bourse.step_sim.agents.NumpyRandomAgents(20, (10, 60), (10, 20), 2)
     rng = np.random.default_rng(101)
 
-    orders, cancellations = agents.update(rng, None)
+    instructions = agents.update(rng, env.level_2_data())
 
-    env.submit_limit_orders(orders)
-    env.submit_cancellations(cancellations)
+    env.submit_instructions(instructions)

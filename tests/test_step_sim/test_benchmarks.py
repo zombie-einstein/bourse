@@ -43,9 +43,8 @@ def run_numpy_sim(n_steps, seed, e, a):
 
     for _ in range(n_steps):
         for agent in a:
-            orders, cancels = agent.update(rng, e)
-            e.submit_limit_orders(orders)
-            e.submit_cancellations(cancels)
+            instructions = agent.update(rng, e)
+            e.submit_instructions(instructions)
 
 
 def test_simulation_benchmark(benchmark, env, agents):

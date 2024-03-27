@@ -206,18 +206,18 @@ impl StepEnvNumpy {
     /// Submit market instructions as a tuple of Numpy arrays. This allows
     /// new limit orders and cancellations to be submitted from a tuple
     /// of Numpy arrays. Values that are not used for instructions (e.g.
-    /// order-id for a new-order) can be set to a default values that will be ignored.
+    /// order-id for a new-order) can be set to a default value that will be ignored.
     ///
     /// Parameters
     /// ----------
     /// instructions: tuple[np.array, np.array, np.array, np.array, np.array, np.array]
-    ///     Tuple of numpy arrays containing
+    ///     Tuple of numpy arrays containing:
     ///
     ///     - Instruction type, an integer representing
     ///
-    ///         - ``0``: No change/null instruction
-    ///         - ``1``: New order
-    ///         - ``2``: Cancel order
+    ///       - ``0``: No change/null instruction
+    ///       - ``1``: New order
+    ///       - ``2``: Cancel order
     ///
     ///     - Order sides (as bool, ``True`` for bid side) (used for new orders)
     ///     - Order volumes (used for new orders)
