@@ -15,7 +15,7 @@ then define an agent class
 
 .. testcode:: random_example
 
-   class RandomAgent:
+   class RandomAgent(bourse.step_sim.agents.BaseAgent):
        def __init__(self, i, price_range):
            self.i = i
            self.price_range = price_range
