@@ -10,11 +10,12 @@ import bourse
 
 
 def run(
-    env: bourse.core.StepEnv,
+    env: typing.Union[bourse.core.StepEnv, bourse.core.StepEnvNumpy],
     agents: typing.Iterable,
     n_steps: int,
     seed: int,
     show_progress: bool = True,
+    use_numpy: bool = False,
 ) -> typing.Dict[str, np.ndarray]:
     """
     Run a discrete event simulation for fixed number of steps
@@ -51,7 +52,13 @@ def run(
     agents: list or tuple
         Iterable containing initialised agents. Agents
         should have an ``update`` method that interacts
-        with the simulation environment.
+        with the simulation environment, or if ``use_numpy``
+        is ``True`` then agents should return a tuple
+        of Numpy array instructions. See
+        :py:class:`bourse.step_sim.agents.base_agent.BaseAgent`
+        and
+        :py:class:`bourse.step_sim.agents.base_agent.BaseNumpyAgent`
+        for more details.
     n_steps: int
         Number of simulation steps to run.
     seed: int
@@ -59,6 +66,9 @@ def run(
     show_progress: bool, optional
         If ``True`` a progress bar will be displayed,
         default ``True``
+    use_numpy: bool, optional
+        If ``True`` use numpy api to for market state and
+        to submit market instructions. Default ``False``
 
     Returns
     -------
@@ -76,12 +86,35 @@ def run(
         - ``n_ask_<N>``: Number of ask orders at top 10 levels at each step
     """
 
+    if use_numpy:
+        assert isinstance(env, bourse.core.StepEnvNumpy)
+        assert all(
+            [isinstance(a, bourse.step_sim.agents.BaseNumpyAgent) for a in agents]
+        ), "Agents should implement bourse.step_sim.agents.BaseNumpyAgent"
+    else:
+        assert isinstance(env, bourse.core.StepEnv)
+        assert all(
+            [isinstance(a, bourse.step_sim.agents.BaseAgent) for a in agents]
+        ), "Agents should implement bourse.step_sim.agents.BaseAgent"
+
     rng = np.random.default_rng(seed)
+    it = tqdm.trange(n_steps, disable=not show_progress)
 
-    for _ in tqdm.trange(n_steps, disable=not show_progress):
-        for agent in agents:
-            agent.update(rng, env)
+    if use_numpy:
+        for _ in it:
 
-        env.step()
+            level_2_data = env.level_2_data()
+
+            for agent in agents:
+                instructions = agent.update(rng, level_2_data)
+                env.submit_instructions(instructions)
+
+            env.step()
+    else:
+        for _ in it:
+            for agent in agents:
+                agent.update(rng, env)
+
+            env.step()
 
     return env.get_market_data()

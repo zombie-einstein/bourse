@@ -80,3 +80,41 @@ def test_numpy_random_agent():
     instructions = agents.update(rng, env.level_2_data())
 
     env.submit_instructions(instructions)
+
+
+def test_runner():
+    class TestAgent(bourse.step_sim.agents.BaseNumpyAgent):
+        def __init__(self, side: bool, start_price: int):
+            self.side = side
+            self.start_price = start_price
+            self.step = 0
+
+        def update(self, _rng, _level_2_data):
+            if self.side:
+                new_price = self.start_price + self.step
+            else:
+                new_price = self.start_price - self.step
+
+            self.step += 1
+
+            return (
+                np.array([1], dtype=np.uint32),
+                np.array([self.side]),
+                np.array([10], dtype=np.uint32),
+                np.array([101], dtype=np.uint32),
+                np.array([new_price], dtype=np.uint32),
+                np.array([0], dtype=np.uint64),
+            )
+
+    env = bourse.core.StepEnvNumpy(101, 0, 1, 100_000)
+    agents = [TestAgent(True, 10), TestAgent(False, 50)]
+
+    data = bourse.step_sim.run(env, agents, 10, 101, use_numpy=True)
+
+    assert np.array_equal(data["bid_price"], 10 + np.arange(10))
+    assert np.array_equal(data["ask_price"], 50 - np.arange(10))
+    assert np.array_equal(data["bid_vol"], 10 * np.arange(1, 11))
+    assert np.array_equal(data["ask_vol"], 10 * np.arange(1, 11))
+    assert np.array_equal(data["bid_vol_0"], 10 * np.ones(10))
+    assert np.array_equal(data["ask_vol_0"], 10 * np.ones(10))
+    assert np.array_equal(data["trade_vol"], np.zeros(10))
