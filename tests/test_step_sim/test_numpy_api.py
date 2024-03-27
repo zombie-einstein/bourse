@@ -43,7 +43,7 @@ def test_raise_from_bad_order():
     ids = np.array([1, 1], dtype=np.uint32)
     prices = np.array([20, 21], dtype=np.uint32)
 
-    with pytest.raises(BaseException):
+    with pytest.raises(ValueError):
         env.submit_limit_orders((sides, vols, ids, prices))
 
 

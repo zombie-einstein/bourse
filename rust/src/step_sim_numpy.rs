@@ -4,7 +4,6 @@ use std::collections::HashMap;
 use super::types::{cast_order, cast_trade, NumpyInstructions, PyOrder, PyTrade};
 use bourse_book::types::{Nanos, OrderId, Price, TraderId, Vol};
 use bourse_de::{Env as BaseEnv, OrderError};
-use ndarray::Zip;
 use numpy::{PyArray1, ToPyArray};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -160,25 +159,22 @@ impl StepEnvNumpy {
             orders.3.readonly(),
         );
 
-        let orders = (
-            orders.0.as_array(),
-            orders.1.as_array(),
-            orders.2.as_array(),
-            orders.3.as_array(),
-        );
+        let sides = orders.0.as_array();
+        let volumes = orders.1.as_array();
+        let trader_ids = orders.2.as_array();
+        let prices = orders.3.as_array();
 
-        // TODO: would be nice to return better error here
-        let order_ids = Zip::from(orders.0)
-            .and(orders.1)
-            .and(orders.2)
-            .and(orders.3)
-            .map_collect(|side, vol, id, price| {
+        let ids: Result<Vec<OrderId>, OrderError> = (0..orders.0.len())
+            .map(|i| {
                 self.env
-                    .place_order((*side).into(), *vol, *id, Some(*price))
-                    .unwrap()
-            });
+                    .place_order(sides[i].into(), volumes[i], trader_ids[i], Some(prices[i]))
+            })
+            .collect();
 
-        Ok(order_ids.to_pyarray(py))
+        match ids {
+            Ok(i) => Ok(i.to_pyarray(py)),
+            Err(e) => Err(PyValueError::new_err(e.to_string())),
+        }
     }
 
     /// submit_cancellations(order_ids: numpy.ndarray)
