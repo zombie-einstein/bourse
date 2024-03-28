@@ -44,12 +44,16 @@ html_theme = "sphinx_immaterial"
 
 html_theme_options = {
     "repo_url": "https://github.com/zombie-einstein/bourse",
-    "icon": {"repo": "fontawesome/brands/github", "logo": "material/chart-line"},
+    "icon": {
+        "repo": "fontawesome/brands/github",
+        "logo": "material/chart-line",
+    },
     "palette": {
         "scheme": "slate",
         "primary": "black",
     },
-    "toc_title_is_page_title": True,
+    "toc_title": "Contents",
+    # "toc_title_is_page_title": True,
 }
 
 python_apigen_order_tiebreaker = "alphabetical"
