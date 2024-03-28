@@ -7,7 +7,7 @@ build-backend = "maturin"
 
 [project]
 name = "bourse"
-version = "0.3.1"
+version = "0.4.0"
 description = "Python API for a Rust stock market simulation library"
 readme = "README.md"
 requires-python = ">=3.8"
