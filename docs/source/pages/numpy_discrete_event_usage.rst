@@ -1,5 +1,5 @@
-Numpy Discrete Event Simulation Environment
--------------------------------------------
+Numpy Discrete Event Environment
+--------------------------------
 
 This environment allows market state and market instructions
 to be returned/submitted as Numpy arrays. This has the

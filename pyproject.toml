@@ -71,7 +71,7 @@ dependencies = [
   "maturin >= 1.2.3",
   "patchelf >= 0.17.2.1; platform_system != 'Darwin'",
   "sphinx >= 7.2.6",
-  "sphinx-immaterial >= 0.11.10",
+  "sphinx-immaterial >= 0.11.11",
 ]
 
 [tool.hatch.envs.docs.scripts]
