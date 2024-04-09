@@ -60,4 +60,12 @@ simulation
    market_data = bourse.step_sim.run(env, agents, n_steps, seed)
 
 ``market_data`` is a dictionary of Numpy arrays containing market
-data recorded over the course of the simulation.
+data recorded over the course of the simulation. As it is a
+dictionary of arrays, it can readily be converted to a
+:py:class:`pandas.DataFrame` for analysis/visualisation
+
+.. testcode:: random_example
+
+   import pandas as pd
+
+   market_data_df = pd.DataFrame(market_data)
