@@ -1,9 +1,18 @@
 Orderbook
 ---------
 
-An orderbook is initialised with a start time
-(this is the time used to record events) and a
-tick-size
+An orderbook is initialised with the parameters
+
+- *start time*: Time to initialise the orderbook
+  with. The time field of the orderbook is used
+  when recording events and trades.
+- *tick-size*: Value between price-levels
+  of the order book. Prices are represented by
+  integers, so the tick-size can represent an
+  arbitrary value (e.g. a fixed number of decimal
+  places). A value of ``1`` can be used for simplicity,
+  but different values can be used to represent
+  assets with differing tick sizes.
 
 .. testcode:: book_usage
 
@@ -14,8 +23,13 @@ tick-size
 
    book = bourse.core.OrderBook(start_time, tick_size)
 
-The state of the orderbook an then be directly
+The state of the orderbook can then be directly
 updated, for example placing a limit bid order
+
+.. note::
+
+   Omitting the price keyword argument will instead place
+   a market order.
 
 .. testcode:: book_usage
 
@@ -31,12 +45,14 @@ or cancelling the same order
 
    book.cancel_order(order_id)
 
-When directly interacting with the orderbook
-updates are immediately applied and the state
-of the market updated.
+.. note::
 
-The orderbook also tracks updates, for example
-trades executed on the order book can be
+   When directly interacting with the orderbook in this
+   manner updates are immediately applied, and the state
+   of the market directly updated.
+
+The orderbook also tracks updates over its lifetime. For
+example, trades executed on the order book can be
 retrieved with
 
 .. testcode:: book_usage
