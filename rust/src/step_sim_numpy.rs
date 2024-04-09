@@ -199,8 +199,9 @@ impl StepEnvNumpy {
 
     /// submit_instructions(instructions: tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray, numpy.ndarray])
     ///
-    /// Submit market instructions as a tuple of Numpy arrays. This allows
-    /// new limit orders and cancellations to be submitted from a tuple
+    /// Submit market instructions as a tuple of Numpy arrays.
+    ///
+    /// This allows new limit orders and cancellations to be submitted from a tuple
     /// of Numpy arrays. Values that are not used for instructions (e.g.
     /// order-id for a new-order) can be set to a default value that will be ignored.
     ///
@@ -279,15 +280,25 @@ impl StepEnvNumpy {
     ///
     /// Returns a Numpy array with values at indices:
     ///
-    /// - 0: Trade volume (in the last step)
-    /// - 1: Bid touch price
-    /// - 2: Ask touch price
-    /// - 3: Bid total volume
-    /// - 4: Ask total volume
-    /// - 5: Bid touch volume
-    /// - 6: Number of buy orders at touch
-    /// - 7: Ask touch volume
-    /// - 8: Number of sell orders at touch
+    /// +----+---------------------------------+
+    /// |0   | Trade volume (in the last step) |
+    /// +----+---------------------------------+
+    /// |1   | Bid touch price                 |
+    /// +----+---------------------------------+
+    /// |2   | Ask touch price                 |
+    /// +----+---------------------------------+
+    /// |3   | Bid total volume                |
+    /// +----+---------------------------------+
+    /// |4   | Ask total volume                |
+    /// +----+---------------------------------+
+    /// |5   | Bid touch volume                |
+    /// +----+---------------------------------+
+    /// |6   | Number of buy orders at touch   |
+    /// +----+---------------------------------+
+    /// |7   | Ask touch volume                |
+    /// +----+---------------------------------+
+    /// |8   | Number of sell orders at touch  |
+    /// +----+---------------------------------+
     ///
     pub fn level_1_data<'a>(&self, py: Python<'a>) -> &'a PyArray1<u32> {
         let data = self.env.level_2_data();
@@ -312,19 +323,30 @@ impl StepEnvNumpy {
     ///
     /// Returns a Numpy array with values at indices:
     ///
-    /// - 0: Trade volume (in the last step)
-    /// - 1: Bid touch price
-    /// - 2: Ask touch price
-    /// - 3: Bid total volume
-    /// - 4: Ask total volume
+    /// +----+---------------------------------+
+    /// |0   | Trade volume (in the last step) |
+    /// +----+---------------------------------+
+    /// |1   | Bid touch price                 |
+    /// +----+---------------------------------+
+    /// |2   | Ask touch price                 |
+    /// +----+---------------------------------+
+    /// |3   | Bid total volume                |
+    /// +----+---------------------------------+
+    /// |4   | Ask total volume                |
+    /// +----+---------------------------------+
     ///
     /// the following 40 values are data for each
     /// price level below/above the touch
     ///
-    /// - Bid volume at level
-    /// - Number of buy orders at level
-    /// - Ask volume at level
-    /// - Number of sell orders at level
+    /// +----------------------------------+
+    /// | Bid volume at level n            |
+    /// +----------------------------------+
+    /// | Number of buy orders at level n  |
+    /// +----------------------------------+
+    /// | Ask volume at level n            |
+    /// +----------------------------------+
+    /// | Number of sell orders at level n |
+    /// +----------------------------------+
     ///
     pub fn level_2_data<'a>(&self, py: Python<'a>) -> &'a PyArray1<u32> {
         let data = self.env.level_2_data();
@@ -356,17 +378,27 @@ impl StepEnvNumpy {
     /// -------
     /// list
     ///     List of tuples records representing all orders created,
-    ///      with fields:
+    ///     with fields:
     ///
-    ///     - side (``True`` indicates bid-side)
-    ///     - status of the order
-    ///     - arrival time of the order
-    ///     - end time of the order
-    ///     - Remaining volume of the order
-    ///     - Starting volume of the order
-    ///     - Price of the order
-    ///     - Id of the trader/agent who placed the order
-    ///     - Id of the order
+    ///     +---------------------------------------------+
+    ///     | side (``True`` indicates bid-side)          |
+    ///     +---------------------------------------------+
+    ///     | status of the order                         |
+    ///     +---------------------------------------------+
+    ///     | arrival time of the order                   |
+    ///     +---------------------------------------------+
+    ///     | end time of the order                       |
+    ///     +---------------------------------------------+
+    ///     | Remaining volume of the order               |
+    ///     +---------------------------------------------+
+    ///     | Starting volume of the order                |
+    ///     +---------------------------------------------+
+    ///     | Price of the order                          |
+    ///     +---------------------------------------------+
+    ///     | Id of the trader/agent who placed the order |
+    ///     +---------------------------------------------+
+    ///     | Id of the order                             |
+    ///     +---------------------------------------------+
     ///
     pub fn get_orders(&self) -> Vec<PyOrder> {
         self.env.get_orders().into_iter().map(cast_order).collect()
@@ -383,12 +415,19 @@ impl StepEnvNumpy {
     /// list
     ///     A list of tuple trade records with fields
     ///
-    ///     - Trade time
-    ///     - Side flag (``True`` for bid side)
-    ///     - Trade price
-    ///     - Trade volume
-    ///     - Id of the aggressive order
-    ///     - Id of the passive order
+    ///     +-----------------------------------+
+    ///     | Trade time                        |
+    ///     +-----------------------------------+
+    ///     | Side flag (``True`` for bid side) |
+    ///     +-----------------------------------+
+    ///     | Trade price                       |
+    ///     +-----------------------------------+
+    ///     | Trade volume                      |
+    ///     +-----------------------------------+
+    ///     | Id of the aggressive order        |
+    ///     +-----------------------------------+
+    ///     | Id of the passive order           |
+    ///     +-----------------------------------+
     ///
     pub fn get_trades(&self) -> Vec<PyTrade> {
         self.env.get_trades().iter().map(cast_trade).collect()
@@ -407,17 +446,27 @@ impl StepEnvNumpy {
     /// Returns
     /// -------
     /// dict[str, np.ndarray]
-    ///     Dictionary containing level 1 data with keys:
+    ///     Dictionary containing level 2 data histories with keys:
     ///
-    ///     - ``bid_price`` - Touch price
-    ///     - ``ask_price`` - Touch price
-    ///     - ``bid_vol`` - Total volume
-    ///     - ``ask_vol`` - Total volume
-    ///     - ``trade_vol`` - Total trade vol over a step
-    ///     - ``bid_vol_<N>`` - Volumes at 10 levels from bid touch
-    ///     - ``ask_vol_<N>`` - Volumes at 10 levels from ask touch
-    ///     - ``n_bid_<N>`` - Number of orders at 10 levels from the bid
-    ///     - ``n_ask_<N>`` - Number of orders at 10 levels from the ask
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``bid_price``   | Touch price                                |
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``ask_price``   | Touch price                                |
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``bid_vol``     | Total volume                               |
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``ask_vol``     | Total volume                               |
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``trade_vol``   | Total trade vol over a step                |
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``bid_vol_<N>`` | Volumes at 10 levels from bid touch        |
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``ask_vol_<N>`` | Volumes at 10 levels from ask touch        |
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``n_bid_<N>``   | Number of orders at 10 levels from the bid |
+    ///     +-----------------+--------------------------------------------+
+    ///     | ``n_ask_<N>``   | Number of orders at 10 levels from the ask |
+    ///     +-----------------+--------------------------------------------+
     ///
     pub fn get_market_data<'a>(&self, py: Python<'a>) -> HashMap<String, &'a PyArray1<u32>> {
         let data = self.env.get_level_2_data_history();
