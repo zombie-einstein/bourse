@@ -141,6 +141,8 @@ impl<const N: usize> OrderBook<N> {
 
     /// Manually set the time of the orderbook
     ///
+    /// # Arguments
+    ///
     /// - `t` - Time to set
     pub fn set_time(&mut self, t: Nanos) {
         self.t = t;

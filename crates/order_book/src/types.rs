@@ -16,6 +16,10 @@ pub type Vol = u32;
 pub type TraderId = u32;
 /// Count of orders
 pub type OrderCount = u32;
+/// Idx to an asset orderbook
+pub type AssetIdx = usize;
+/// Order Id along with asset idx
+pub type MarketOrderId = (AssetIdx, OrderId);
 
 /// Market side
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -242,6 +246,11 @@ pub enum Event {
         /// New volume of the order
         new_vol: Option<Vol>,
     },
+}
+
+pub struct MarketEvent {
+    pub asset: AssetIdx,
+    pub event: Event,
 }
 
 /// Level 1 market data

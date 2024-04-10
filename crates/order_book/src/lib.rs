@@ -94,8 +94,10 @@
 //!   order entry, but does not immediately place
 //!   the order on the market.
 //!
+mod market;
 mod orderbook;
 mod side;
 pub mod types;
 
+pub use market::Market;
 pub use orderbook::{OrderBook, OrderError};
