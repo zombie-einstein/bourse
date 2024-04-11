@@ -6,8 +6,8 @@ use std::{array, path::Path};
 
 use super::{OrderBook, OrderError};
 use crate::types::{
-    AssetIdx, Event, MarketEvent, MarketOrderId, Nanos, Order, OrderCount, Price, Side, TraderId,
-    Vol,
+    AssetIdx, Level2Data, MarketEvent, MarketOrderId, Nanos, Order, OrderCount, Price, Side,
+    TraderId, Vol,
 };
 
 /// Multi asset market combining several [OrderBook]
@@ -190,6 +190,31 @@ impl<const ASSETS: usize, const LEVELS: usize> Market<ASSETS, LEVELS> {
         array::from_fn(|i| self.order_books[i].bid_ask())
     }
 
+    /// Get current level 2 market data across assets
+    ///
+    /// In this case level 2 data contains
+    /// additional order information at a fixed number
+    /// of ticks from the best price
+    ///
+    /// - Best bid and ask prices
+    /// - Total bid and ask volumes
+    /// - Volume and number of orders at N levels (ticks)
+    ///   above/below the bid ask (where N is 10 by default)
+    ///
+    pub fn level_2_data(&self) -> [Level2Data<LEVELS>; ASSETS] {
+        array::from_fn(|i| {
+            let (bid_price, ask_price) = self.order_books[i].bid_ask();
+            Level2Data {
+                bid_price,
+                ask_price,
+                bid_vol: self.order_books[i].bid_vol(),
+                ask_vol: self.order_books[i].ask_vol(),
+                bid_price_levels: self.order_books[i].bid_levels(),
+                ask_price_levels: self.order_books[i].ask_levels(),
+            }
+        })
+    }
+
     /// Get a reference to the order data stored at the id
     ///
     /// # Arguments
@@ -316,16 +341,20 @@ impl<const ASSETS: usize, const LEVELS: usize> Market<ASSETS, LEVELS> {
     /// - `event` - Order instruction with asset id
     ///
     pub fn process_event(&mut self, event: MarketEvent) {
-        let (asset, event) = (event.asset, event.event);
         match event {
-            Event::New { order_id } => self.place_order((asset, order_id)),
-            Event::Cancellation { order_id } => self.cancel_order((asset, order_id)),
-            Event::Modify {
+            MarketEvent::New { order_id } => self.place_order(order_id),
+            MarketEvent::Cancellation { order_id } => self.cancel_order(order_id),
+            MarketEvent::Modify {
                 order_id,
                 new_price,
                 new_vol,
-            } => self.modify_order((asset, order_id), new_price, new_vol),
+            } => self.modify_order(order_id, new_price, new_vol),
         }
+    }
+
+    /// Reference to list of created orders for an asset
+    pub fn get_orders(&self, asset: AssetIdx) -> Vec<&Order> {
+        self.order_books[asset].get_orders()
     }
 
     /// Save a snapshot of the market to JSON

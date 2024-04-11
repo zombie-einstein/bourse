@@ -139,9 +139,13 @@
 //!
 
 pub mod agents;
+mod data;
 mod env;
+mod market_env;
 mod runner;
 
 pub use bourse_book::{types, OrderError};
+pub use data::Level2DataRecords;
 pub use env::Env;
+pub use market_env::MarketEnv;
 pub use runner::sim_runner;

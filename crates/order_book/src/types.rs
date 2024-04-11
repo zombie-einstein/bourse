@@ -248,9 +248,27 @@ pub enum Event {
     },
 }
 
-pub struct MarketEvent {
-    pub asset: AssetIdx,
-    pub event: Event,
+/// Multi-asset order/transaction instruction
+pub enum MarketEvent {
+    /// Place an order on the market
+    New {
+        /// Id of the order to place
+        order_id: MarketOrderId,
+    },
+    /// Cancel an order
+    Cancellation {
+        /// Id of the order to cancel
+        order_id: MarketOrderId,
+    },
+    /// Modify an order
+    Modify {
+        // Id of the order to modify
+        order_id: MarketOrderId,
+        /// New price of the order
+        new_price: Option<Price>,
+        /// New volume of the order
+        new_vol: Option<Vol>,
+    },
 }
 
 /// Level 1 market data
