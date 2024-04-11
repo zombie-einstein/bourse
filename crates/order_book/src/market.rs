@@ -1,3 +1,5 @@
+//! Multi asset market combining several order-books
+//!
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::{array, path::Path};
@@ -8,6 +10,50 @@ use crate::types::{
     Vol,
 };
 
+/// Multi asset market combining several [OrderBook]
+///
+/// Market combining several order-books allowing
+/// orders and instructions to be placed for multiple
+/// assets. Market data across all assets can then
+/// be retrieved as an array of values.
+///
+/// For efficiency assets are indexed  by an
+/// [AssetIdx] (as opposed to a ticker). Order ids
+/// are then also extended with an asset index,
+/// defined by [MarketOrderId].
+///
+/// A Market type is parametrised by 2 constants:
+///
+/// - `N` - The number of assets
+/// - `M` - The number of price levels tracked
+///   by each order-book (default is 10)
+///
+/// # Examples
+///
+/// ```
+/// use bourse_book::{types, Market};
+///
+/// // Initialise a market with 4 assets
+/// let mut market = Market::<4>::new(0, [1, 1, 1, 1], true);
+///
+/// // Place a buy order for asset 0
+/// market.create_and_place_order(
+///     0, types::Side::Bid, 10, 0, Some(100)
+/// ).unwrap();
+///
+/// // Place a sell order for asset 2
+/// market.create_and_place_order(
+///     2, types::Side::Ask, 10, 0, Some(100)
+/// ).unwrap();
+///
+/// // Get current prices across assets
+/// let prices = market.bid_asks();
+///
+/// // Individual order-books can be accessed by index
+/// // for example to retrieve trade data
+/// let trades_0 = market.get_order_book(0).get_trades();
+/// ```
+///
 #[serde_as]
 #[derive(Deserialize, Serialize)]
 pub struct Market<const N: usize, const M: usize = 10> {
@@ -16,6 +62,15 @@ pub struct Market<const N: usize, const M: usize = 10> {
 }
 
 impl<const N: usize, const M: usize> Market<N, M> {
+    /// Initialise a market
+    ///
+    /// # Arguments
+    ///
+    /// - `start_time` - Initial time to assign to the market
+    ///   and contained order-books.
+    /// - `tick_size` - Array of integer tick sizes for each asset.
+    /// - `trading` - If `False` no orders will be matched.
+    ///
     pub fn new(start_time: Nanos, tick_size: [Price; N], trading: bool) -> Self {
         Self {
             order_books: array::from_fn(|i| OrderBook::<M>::new(start_time, tick_size[i], trading)),
@@ -23,11 +78,21 @@ impl<const N: usize, const M: usize> Market<N, M> {
     }
 
     /// Get a reference to an orderbook
+    ///
+    /// # Arguments
+    ///
+    /// - `asset` - Index of the asset
+    ///
     pub fn get_order_book(&self, asset: AssetIdx) -> &OrderBook<M> {
         &self.order_books[asset]
     }
 
     /// Get a mutable reference to an orderbook
+    ///
+    /// # Arguments
+    ///
+    /// - `asset` - Index of the asset
+    ///
     pub fn get_order_book_mut(&mut self, asset: AssetIdx) -> &mut OrderBook<M> {
         &mut self.order_books[asset]
     }
@@ -49,14 +114,14 @@ impl<const N: usize, const M: usize> Market<N, M> {
         }
     }
 
-    /// Enable trade execution
+    /// Enable trade execution for all assets
     pub fn enable_trading(&mut self) {
         for book in self.order_books.iter_mut() {
             book.enable_trading()
         }
     }
 
-    /// Disable trade execution
+    /// Disable trade execution for all assets
     ///
     /// > **_NOTE:_** Currently there is not
     ///   a un-crossing algorithm implemented
@@ -71,24 +136,24 @@ impl<const N: usize, const M: usize> Market<N, M> {
         array::from_fn(|i| self.order_books[i].get_trade_vol())
     }
 
-    /// Reset cumulative trade vol to 0
+    /// Reset cumulative trade vol to 0 for all assets
     pub fn reset_trade_vols(&mut self) {
         for book in self.order_books.iter_mut() {
             book.reset_trade_vol();
         }
     }
 
-    /// Get the current total ask volume
+    /// Get the current total ask volume for all assets
     pub fn bid_vols(&self) -> [Vol; N] {
         array::from_fn(|i| self.order_books[i].bid_vol())
     }
 
-    /// Get the current touch ask volume
+    /// Get the current touch ask volume for all assets
     pub fn bid_best_vols(&self) -> [Vol; N] {
         array::from_fn(|i| self.order_books[i].bid_best_vol())
     }
 
-    /// Get the current touch ask volume and order count
+    /// Get the current touch ask volume and order count for all assets
     pub fn bid_best_vol_and_orders(&self) -> [(Vol, OrderCount); N] {
         array::from_fn(|i| self.order_books[i].bid_best_vol_and_orders())
     }
@@ -98,17 +163,17 @@ impl<const N: usize, const M: usize> Market<N, M> {
         array::from_fn(|i| self.order_books[i].bid_levels())
     }
 
-    /// Get the current total ask volume
+    /// Get the current total ask volume for all assets
     pub fn ask_vols(&self) -> [Vol; N] {
         array::from_fn(|i| self.order_books[i].ask_vol())
     }
 
-    /// Get the current touch ask volume
+    /// Get the current touch ask volume for all assets
     pub fn ask_best_vols(&self) -> [Vol; N] {
         array::from_fn(|i| self.order_books[i].ask_best_vol())
     }
 
-    /// Get the current touch ask volume and order count
+    /// Get the current touch ask volume and order count for all assets
     pub fn ask_best_vol_and_orders(&self) -> [(Vol, OrderCount); N] {
         array::from_fn(|i| self.order_books[i].ask_best_vol_and_orders())
     }
@@ -118,7 +183,7 @@ impl<const N: usize, const M: usize> Market<N, M> {
         array::from_fn(|i| self.order_books[i].ask_levels())
     }
 
-    /// Get current bid-ask price
+    /// Get current bid-ask price for all assets
     pub fn bid_asks(&self) -> [(Price, Price); N] {
         array::from_fn(|i| self.order_books[i].bid_ask())
     }

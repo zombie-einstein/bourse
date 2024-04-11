@@ -3,7 +3,6 @@
 //! # Examples
 //!
 //! ```
-//! use bourse_book;
 //! use bourse_book::{types, OrderBook};
 //!
 //! let mut book: OrderBook  = OrderBook::new(0, 1, true);
@@ -44,7 +43,6 @@ pub struct OrderEntry {
 /// # Examples
 ///
 /// ```
-/// use bourse_book;
 /// use bourse_book::{types, OrderBook};
 ///
 /// let mut book: OrderBook = OrderBook::new(0, 1, true);
