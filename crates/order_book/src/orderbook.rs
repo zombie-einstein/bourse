@@ -1268,7 +1268,7 @@ mod tests {
         assert!(book.bid_vol() == loaded_book.bid_vol());
 
         assert!(book.ask_best_vol_and_orders() == loaded_book.ask_best_vol_and_orders());
-        assert!(book.bid_vol() == loaded_book.bid_vol());
+        assert!(book.ask_vol() == loaded_book.ask_vol());
 
         assert!(book.current_order_id() == loaded_book.current_order_id());
 

@@ -451,4 +451,64 @@ mod tests {
         assert!(matches!(market.order((0, 2)).status, Status::Cancelled));
         assert!(matches!(market.order((0, 3)).status, Status::Cancelled));
     }
+
+    #[test]
+    fn test_mod_order_vol() {
+        let mut market: Market<2> = Market::new(0, [1, 2], true);
+
+        market
+            .create_and_place_order(0, Side::Ask, 10, 0, Some(100))
+            .unwrap();
+        market
+            .create_and_place_order(0, Side::Bid, 10, 0, Some(50))
+            .unwrap();
+
+        market.modify_order((0, 0), None, Some(8));
+        market.modify_order((0, 1), None, Some(5));
+
+        assert!(market.ask_vols() == [8, 0]);
+        assert!(market.ask_best_vols() == [8, 0]);
+        assert!(market.ask_best_vol_and_orders() == [(8, 1), (0, 0)]);
+        assert!(market.bid_vols() == [5, 0]);
+        assert!(market.bid_best_vols() == [5, 0]);
+        assert!(market.bid_best_vol_and_orders() == [(5, 1), (0, 0)]);
+
+        assert!(market.order((0, 0)).vol == 8);
+        assert!(market.order((0, 1)).vol == 5);
+    }
+
+    #[test]
+    fn test_serialisation() {
+        use rand::{seq::SliceRandom, Rng};
+        use rand_xoshiro::rand_core::SeedableRng;
+        use rand_xoshiro::Xoroshiro128Plus;
+
+        let mut market: Market<4> = Market::new(0, [1, 1, 1, 1], true);
+
+        let mut rng = Xoroshiro128Plus::seed_from_u64(101);
+
+        for i in (0..500).into_iter() {
+            let asset = rng.gen_range(0..4);
+            let side = [Side::Bid, Side::Ask].choose(&mut rng).unwrap();
+            let price = rng.gen_range(20..40);
+            let vol = rng.gen_range(5..20);
+            market
+                .create_and_place_order(asset, *side, vol, 0, Some(price))
+                .unwrap();
+            market.set_time(i);
+        }
+
+        let market_snapshot = serde_json::to_string(&market).unwrap();
+        let loaded_market = serde_json::from_str::<Market<4>>(market_snapshot.as_str()).unwrap();
+
+        assert!(market.get_trade_vols() == loaded_market.get_trade_vols());
+
+        assert!(market.bid_asks() == loaded_market.bid_asks());
+
+        assert!(market.bid_best_vol_and_orders() == loaded_market.bid_best_vol_and_orders());
+        assert!(market.bid_vols() == loaded_market.bid_vols());
+
+        assert!(market.ask_best_vol_and_orders() == loaded_market.ask_best_vol_and_orders());
+        assert!(market.ask_vols() == loaded_market.ask_vols());
+    }
 }
