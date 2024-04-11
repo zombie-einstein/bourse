@@ -24,8 +24,8 @@ use crate::types::{
 ///
 /// A Market type is parametrised by 2 constants:
 ///
-/// - `N` - The number of assets
-/// - `M` - The number of price levels tracked
+/// - `ASSETS` - The number of assets
+/// - `LEVELS` - The number of price levels tracked
 ///   by each order-book (default is 10)
 ///
 /// # Examples
@@ -56,12 +56,12 @@ use crate::types::{
 ///
 #[serde_as]
 #[derive(Deserialize, Serialize)]
-pub struct Market<const N: usize, const M: usize = 10> {
-    #[serde_as(as = "[_; N]")]
-    order_books: [OrderBook<M>; N],
+pub struct Market<const ASSETS: usize, const LEVELS: usize = 10> {
+    #[serde_as(as = "[_; ASSETS]")]
+    order_books: [OrderBook<LEVELS>; ASSETS],
 }
 
-impl<const N: usize, const M: usize> Market<N, M> {
+impl<const ASSETS: usize, const LEVELS: usize> Market<ASSETS, LEVELS> {
     /// Initialise a market
     ///
     /// # Arguments
@@ -71,9 +71,11 @@ impl<const N: usize, const M: usize> Market<N, M> {
     /// - `tick_size` - Array of integer tick sizes for each asset.
     /// - `trading` - If `False` no orders will be matched.
     ///
-    pub fn new(start_time: Nanos, tick_size: [Price; N], trading: bool) -> Self {
+    pub fn new(start_time: Nanos, tick_size: [Price; ASSETS], trading: bool) -> Self {
         Self {
-            order_books: array::from_fn(|i| OrderBook::<M>::new(start_time, tick_size[i], trading)),
+            order_books: array::from_fn(|i| {
+                OrderBook::<LEVELS>::new(start_time, tick_size[i], trading)
+            }),
         }
     }
 
@@ -83,7 +85,7 @@ impl<const N: usize, const M: usize> Market<N, M> {
     ///
     /// - `asset` - Index of the asset
     ///
-    pub fn get_order_book(&self, asset: AssetIdx) -> &OrderBook<M> {
+    pub fn get_order_book(&self, asset: AssetIdx) -> &OrderBook<LEVELS> {
         &self.order_books[asset]
     }
 
@@ -93,7 +95,7 @@ impl<const N: usize, const M: usize> Market<N, M> {
     ///
     /// - `asset` - Index of the asset
     ///
-    pub fn get_order_book_mut(&mut self, asset: AssetIdx) -> &mut OrderBook<M> {
+    pub fn get_order_book_mut(&mut self, asset: AssetIdx) -> &mut OrderBook<LEVELS> {
         &mut self.order_books[asset]
     }
 
@@ -132,7 +134,7 @@ impl<const N: usize, const M: usize> Market<N, M> {
     }
 
     /// Get the current cumulative trade_volume across assets
-    pub fn get_trade_vols(&self) -> [Vol; N] {
+    pub fn get_trade_vols(&self) -> [Vol; ASSETS] {
         array::from_fn(|i| self.order_books[i].get_trade_vol())
     }
 
@@ -144,47 +146,47 @@ impl<const N: usize, const M: usize> Market<N, M> {
     }
 
     /// Get the current total ask volume for all assets
-    pub fn bid_vols(&self) -> [Vol; N] {
+    pub fn bid_vols(&self) -> [Vol; ASSETS] {
         array::from_fn(|i| self.order_books[i].bid_vol())
     }
 
     /// Get the current touch ask volume for all assets
-    pub fn bid_best_vols(&self) -> [Vol; N] {
+    pub fn bid_best_vols(&self) -> [Vol; ASSETS] {
         array::from_fn(|i| self.order_books[i].bid_best_vol())
     }
 
     /// Get the current touch ask volume and order count for all assets
-    pub fn bid_best_vol_and_orders(&self) -> [(Vol, OrderCount); N] {
+    pub fn bid_best_vol_and_orders(&self) -> [(Vol, OrderCount); ASSETS] {
         array::from_fn(|i| self.order_books[i].bid_best_vol_and_orders())
     }
 
     /// Get 2d array of orders and volumes at top levels across assets
-    pub fn bid_levels(&self) -> [[(Vol, OrderCount); M]; N] {
+    pub fn bid_levels(&self) -> [[(Vol, OrderCount); LEVELS]; ASSETS] {
         array::from_fn(|i| self.order_books[i].bid_levels())
     }
 
     /// Get the current total ask volume for all assets
-    pub fn ask_vols(&self) -> [Vol; N] {
+    pub fn ask_vols(&self) -> [Vol; ASSETS] {
         array::from_fn(|i| self.order_books[i].ask_vol())
     }
 
     /// Get the current touch ask volume for all assets
-    pub fn ask_best_vols(&self) -> [Vol; N] {
+    pub fn ask_best_vols(&self) -> [Vol; ASSETS] {
         array::from_fn(|i| self.order_books[i].ask_best_vol())
     }
 
     /// Get the current touch ask volume and order count for all assets
-    pub fn ask_best_vol_and_orders(&self) -> [(Vol, OrderCount); N] {
+    pub fn ask_best_vol_and_orders(&self) -> [(Vol, OrderCount); ASSETS] {
         array::from_fn(|i| self.order_books[i].ask_best_vol_and_orders())
     }
 
     /// Get 2d array of orders and volumes at top levels across assets
-    pub fn ask_levels(&self) -> [[(Vol, OrderCount); M]; N] {
+    pub fn ask_levels(&self) -> [[(Vol, OrderCount); LEVELS]; ASSETS] {
         array::from_fn(|i| self.order_books[i].ask_levels())
     }
 
     /// Get current bid-ask price for all assets
-    pub fn bid_asks(&self) -> [(Price, Price); N] {
+    pub fn bid_asks(&self) -> [(Price, Price); ASSETS] {
         array::from_fn(|i| self.order_books[i].bid_ask())
     }
 
