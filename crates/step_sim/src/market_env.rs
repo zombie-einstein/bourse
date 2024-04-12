@@ -60,9 +60,6 @@ pub struct MarketEnv<const ASSETS: usize, const LEVELS: usize = 10> {
 }
 
 impl<const ASSETS: usize, const LEVELS: usize> MarketEnv<ASSETS, LEVELS> {
-    pub const N_ASSETS: usize = ASSETS;
-    pub const N_LEVELS: usize = LEVELS;
-
     /// Initialise an empty market environment
     ///
     /// # Arguments

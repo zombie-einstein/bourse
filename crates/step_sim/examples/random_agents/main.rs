@@ -1,8 +1,7 @@
-use bourse_de::agents::{Agent, RandomAgents};
+use bourse_de::agents::{Agent, AgentSet, RandomAgents};
 use bourse_de::{sim_runner, Env};
-use bourse_macros::Agents;
 
-#[derive(Agents)]
+#[derive(AgentSet)]
 struct SimAgents {
     pub a: RandomAgents,
     pub b: RandomAgents,

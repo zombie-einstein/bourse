@@ -7,7 +7,7 @@ use rand_distr::LogNormal;
 
 /// Momentum agent parameters
 ///
-/// See [MomentumAgent] for details of the
+/// See [MomentumAgent] for details of how
 /// these parameters are used.
 pub struct MomentumParams {
     /// Integer market tick-size
@@ -72,9 +72,8 @@ pub struct MomentumParams {
 /// ```
 /// use bourse_de::agents::{Agent, AgentSet, MomentumAgent, MomentumParams};
 /// use bourse_de::{sim_runner, Env};
-/// use bourse_macros::Agents;
 ///
-/// #[derive(Agents)]
+/// #[derive(AgentSet)]
 /// struct SimAgents {
 ///     pub a: MomentumAgent,
 /// }

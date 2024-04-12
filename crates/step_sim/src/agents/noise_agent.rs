@@ -44,9 +44,8 @@ pub struct NoiseAgentParams {
 /// ```
 /// use bourse_de::agents::{Agent, AgentSet, NoiseAgent, NoiseAgentParams};
 /// use bourse_de::{sim_runner, Env};
-/// use bourse_macros::Agents;
 ///
-/// #[derive(Agents)]
+/// #[derive(AgentSet)]
 /// struct SimAgents {
 ///     pub a: NoiseAgent,
 /// }

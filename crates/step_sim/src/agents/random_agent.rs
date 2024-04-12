@@ -29,10 +29,10 @@ use rand::RngCore;
 /// # Examples
 ///
 /// ```
-/// use bourse_de::agents::{Agent, RandomAgents, Agents};
+/// use bourse_de::agents::{Agent, RandomAgents, AgentSet};
 /// use bourse_de::{sim_runner, Env};
 ///
-/// #[derive(Agents)]
+/// #[derive(AgentSet)]
 /// struct SimAgents {
 ///     pub a: RandomAgents,
 /// }

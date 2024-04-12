@@ -37,14 +37,14 @@
 //! ```
 //! use bourse_de::types::{Price, Side, Vol};
 //! use bourse_de::agents;
-//! use bourse_de::agents::Agent;
+//! use bourse_de::agents::{Agent, AgentSet};
 //! use bourse_de::{sim_runner, Env};
 //! use rand::{RngCore, Rng};
 //!
 //! // Define a set of agents using built
 //! // in definitions
-//! #[derive(agents::Agents)]
-//! struct SimAgents {
+//! #[derive(AgentSet)]
+//! struct Agents {
 //!     pub a: agents::MomentumAgent,
 //!     pub b: agents::NoiseAgent,
 //! }
@@ -72,7 +72,7 @@
 //!     price_dist_sigma: 1.0,
 //! };
 //!
-//! let mut agents = SimAgents {
+//! let mut agents = Agents {
 //!     a: agents::MomentumAgent::new(0, 10, m_params),
 //!     b: agents::NoiseAgent::new(10, 20, n_params),
 //! };
@@ -99,7 +99,7 @@
 //!
 //! ```
 //! use bourse_de::{Env, sim_runner};
-//! use bourse_de::agents::{Agent, AgentSet, Agents};
+//! use bourse_de::agents::{Agent, AgentSet};
 //! use rand::RngCore;
 //!
 //! struct AgentTypeA{}
@@ -118,14 +118,14 @@
 //!     ) {}
 //! }
 //!
-//! #[derive(Agents)]
-//! struct SimAgents {
+//! #[derive(AgentSet)]
+//! struct Agents {
 //!     pub a: AgentTypeA,
 //!     pub b: AgentTypeB,
 //! }
 //!
 //! let mut env = bourse_de::Env::new(0, 1, 1_000_000, true);
-//! let mut agents = SimAgents{a: AgentTypeA{}, b: AgentTypeB{}};
+//! let mut agents = Agents{a: AgentTypeA{}, b: AgentTypeB{}};
 //!
 //! sim_runner(&mut env, &mut agents, 101, 50, true);
 //! ```
