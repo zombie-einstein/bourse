@@ -14,7 +14,7 @@ mod random_agent;
 pub use bourse_macros::{AgentSet, MarketAgentSet};
 pub use momentum_agent::{MomentumAgent, MomentumParams};
 pub use noise_agent::{NoiseAgent, NoiseAgentParams};
-pub use random_agent::RandomAgents;
+pub use random_agent::{RandomAgents, RandomMarketAgents};
 
 /// Homogeneous agent set functionality
 ///

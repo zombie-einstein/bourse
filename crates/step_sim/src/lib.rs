@@ -148,4 +148,4 @@ pub use bourse_book::{types, OrderError};
 pub use data::Level2DataRecords;
 pub use env::Env;
 pub use market_env::MarketEnv;
-pub use runner::sim_runner;
+pub use runner::{market_sim_runner, sim_runner};

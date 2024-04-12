@@ -1,6 +1,6 @@
-use super::Agent;
-use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
-use crate::Env;
+use super::{Agent, MarketAgent};
+use crate::types::{AssetIdx, MarketOrderId, OrderId, Price, Side, Status, TraderId, Vol};
+use crate::{Env, MarketEnv};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use rand::RngCore;
@@ -101,6 +101,131 @@ impl Agent for RandomAgents {
                             let vol = rng.gen_range(self.vol_range.0..self.vol_range.1);
                             Some(
                                 env.place_order(
+                                    *side,
+                                    vol,
+                                    TraderId::try_from(n).unwrap(),
+                                    Some(tick * self.tick_size),
+                                )
+                                .unwrap(),
+                            )
+                        }
+                    }
+                    false => *i,
+                }
+            })
+            .collect();
+
+        self.orders = new_orders;
+    }
+}
+
+/// Agents that place orders with uniformly sampled parameters
+///
+/// A set of agents that place orders on a random side with
+/// random volume and price within a given range. Sides,
+/// volumes and prices are uniformly sampled.
+///
+/// Each step each agent:
+///
+/// - Are randomly activated with a given activity rate
+/// - If active and they have an active order on the
+///   market they try to cancel that order
+/// - If they don't have an active order then they
+///   place a new order on a random side, with a
+///   random volume and price
+///
+/// <div id="doc-warning-1" class="warning">
+/// The behaviour of this agent is not based on anything
+/// 'realistic' and should probably only be used for
+/// testing and benchmarking.
+/// </div>
+///
+/// # Examples
+///
+/// ```
+/// use bourse_de::agents::{MarketAgent, RandomMarketAgents, MarketAgentSet};
+/// use bourse_de::{market_sim_runner, MarketEnv};
+///
+/// #[derive(MarketAgentSet)]
+/// struct Agents {
+///     pub a: RandomMarketAgents,
+///     pub b: RandomMarketAgents,
+/// }
+///
+/// let mut env = MarketEnv::<2>::new(0, [1, 1], 1_000_000, true);
+///
+/// let mut agents = Agents {
+///     a: RandomMarketAgents::new(0, 10, (40, 60), (10, 20), 2, 0.8),
+///     b: RandomMarketAgents::new(1, 10, (40, 60), (10, 20), 2, 0.8),
+/// };
+///
+/// market_sim_runner(&mut env, &mut agents, 101, 10, false);
+/// ```
+pub struct RandomMarketAgents {
+    asset: AssetIdx,
+    orders: Vec<Option<MarketOrderId>>,
+    tick_range: (Price, Price),
+    vol_range: (Vol, Vol),
+    tick_size: Price,
+    activity_rate: f32,
+}
+
+impl RandomMarketAgents {
+    /// Initialise a set of random agents
+    ///
+    /// # Arguments
+    ///
+    /// - `asset` - Asset the agent will place orders for
+    /// - `n_agents` - Number of agents in the set
+    /// - `tick_range` - Range of ticks to place orders over
+    /// - `vol_range` - Order volume range to sample from
+    /// - `tick_size` - Market tick size
+    /// - `activity_rate` - Agent activity rate
+    ///
+    pub fn new(
+        asset: AssetIdx,
+        n_agents: usize,
+        tick_range: (Price, Price),
+        vol_range: (Vol, Vol),
+        tick_size: Price,
+        activity_rate: f32,
+    ) -> Self {
+        Self {
+            asset,
+            orders: vec![None; n_agents],
+            tick_range,
+            vol_range,
+            tick_size,
+            activity_rate,
+        }
+    }
+}
+
+impl MarketAgent for RandomMarketAgents {
+    fn update<R: RngCore, const M: usize, const N: usize>(
+        &mut self,
+        env: &mut MarketEnv<M, N>,
+        rng: &mut R,
+    ) {
+        let new_orders: Vec<Option<MarketOrderId>> = self
+            .orders
+            .iter_mut()
+            .enumerate()
+            .map(|(n, i)| {
+                let p = rng.gen::<f32>();
+
+                match p < self.activity_rate {
+                    true => {
+                        if (i.is_some()) && (env.order_status(i.unwrap()) == Status::Active) {
+                            env.cancel_order(i.unwrap());
+                            None
+                        } else {
+                            let side = [Side::Ask, Side::Bid].choose(rng).unwrap();
+                            let tick = rng.gen_range(self.tick_range.0..self.tick_range.1);
+                            let vol = rng.gen_range(self.vol_range.0..self.vol_range.1);
+                            Some(
+                                env.place_order(
+                                    self.asset,
                                     *side,
                                     vol,
                                     TraderId::try_from(n).unwrap(),
