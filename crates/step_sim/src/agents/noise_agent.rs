@@ -193,15 +193,15 @@ impl Agent for NoiseAgent {
 /// # Examples
 ///
 /// ```
-/// use bourse_de::agents::{Agent, AgentSet, NoiseAgent, NoiseAgentParams};
-/// use bourse_de::{sim_runner, Env};
+/// use bourse_de::agents::{MarketAgent, MarketAgentSet, NoiseMarketAgent, NoiseAgentParams};
+/// use bourse_de::{market_sim_runner, MarketEnv};
 ///
-/// #[derive(AgentSet)]
+/// #[derive(MarketAgentSet)]
 /// struct Agents {
-///     pub a: NoiseAgent,
+///     pub a: NoiseMarketAgent,
 /// }
 ///
-/// let mut env = Env::new(0, 1, 1_000_000, true);
+/// let mut env = MarketEnv::<1>::new(0, [1], 1_000_000, true);
 ///
 /// let params = NoiseAgentParams{
 ///     tick_size: 2,
@@ -213,10 +213,10 @@ impl Agent for NoiseAgent {
 ///     price_dist_sigma: 1.0,
 /// };
 /// let mut agents = Agents {
-///     a: NoiseAgent::new(0, 5, params),
+///     a: NoiseMarketAgent::new(0, 5, 0, params),
 /// };
 ///
-/// sim_runner(&mut env, &mut agents, 101, 10, false);
+/// market_sim_runner(&mut env, &mut agents, 101, 10, false);
 /// ```
 ///
 /// # References

@@ -248,15 +248,15 @@ impl Agent for MomentumAgent {
 /// # Examples
 ///
 /// ```
-/// use bourse_de::agents::{Agent, AgentSet, MomentumAgent, MomentumParams};
-/// use bourse_de::{sim_runner, Env};
+/// use bourse_de::agents::{MarketAgent, MarketAgentSet, MomentumMarketAgent, MomentumParams};
+/// use bourse_de::{market_sim_runner, MarketEnv};
 ///
-/// #[derive(AgentSet)]
-/// struct SimAgents {
-///     pub a: MomentumAgent,
+/// #[derive(MarketAgentSet)]
+/// struct Agents {
+///     pub a: MomentumMarketAgent,
 /// }
 ///
-/// let mut env = Env::new(0, 1, 1_000_000, true);
+/// let mut env = MarketEnv::<1>::new(0, [1], 1_000_000, true);
 ///
 /// let params = MomentumParams {
 ///     tick_size: 2,
@@ -269,11 +269,11 @@ impl Agent for MomentumAgent {
 ///     price_dist_mu: 0.0,
 ///     price_dist_sigma: 10.0,
 /// };
-/// let mut agents = SimAgents {
-///     a: MomentumAgent::new(0, 5, params),
+/// let mut agents = Agents {
+///     a: MomentumMarketAgent::new(0, 5, 0, params),
 /// };
 ///
-/// sim_runner(&mut env, &mut agents, 101, 10, false);
+/// market_sim_runner(&mut env, &mut agents, 101, 10, false);
 /// ```
 /// # References
 ///
