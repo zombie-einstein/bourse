@@ -1,8 +1,8 @@
 //! Discrete event market simulation library
 //!
-//! Implements a discrete event simulation
-//! environment ([Env]) and utilities for writing
-//! discrete event market simulations.
+//! Implements discrete event simulation
+//! environments ([Env] and [MarketEnv]) and utilities
+//! for writing discrete event market simulations.
 //!
 //! # Model
 //!
@@ -93,7 +93,7 @@
 //! trait. For a set of homogeneous agents (i.e. all the agents are the
 //! same type) this can be implemented directly.
 //!
-//! For a mixture of agent types, the [agents::Agents] macro can be used
+//! For a mixture of agent types, the [agents::AgentSet] macro can be used
 //! to automatically implement [agents::AgentSet] for a struct of agents
 //! all implementing [agents::Agent]. For examples
 //!
@@ -128,6 +128,37 @@
 //! let mut agents = Agents{a: AgentTypeA{}, b: AgentTypeB{}};
 //!
 //! sim_runner(&mut env, &mut agents, 101, 50, true);
+//! ```
+//!
+//! # Multi-Asset Simulation
+//!
+//! Simulations with multiple assets can be run in an equivalent
+//! manner using the multi-asset [MarketEnv]. There are
+//! also equivalent definitions of [agents::MarketAgentSet] and
+//! [market_sim_runner], for example
+//!
+//! ```
+//! use bourse_de::{MarketEnv, market_sim_runner, agents};
+//! use bourse_de::agents::MarketAgent;
+//! use rand::RngCore;
+//!
+//! struct AgentType{}
+//!
+//! impl agents::MarketAgent for AgentType{
+//!     fn update<R: RngCore, const M: usize, const N: usize>(
+//!         &mut self, env: &mut MarketEnv<M, N>, rng: &mut R
+//!     ) {}
+//! }
+//!
+//! #[derive(agents::MarketAgentSet)]
+//! struct Agents {
+//!     pub a: AgentType,
+//! }
+//!
+//! let mut env = MarketEnv::<4>::new(0, [1, 1, 1, 1], 1_000_000, true);
+//! let mut agents = Agents{a: AgentType{}};
+//!
+//! market_sim_runner(&mut env, &mut agents, 101, 50, true);
 //! ```
 //!
 //! # Randomness

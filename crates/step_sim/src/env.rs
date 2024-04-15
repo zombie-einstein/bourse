@@ -43,22 +43,34 @@ use std::mem;
 /// // Update the state of the market
 /// env.step(&mut rng)
 /// ```
-pub struct Env<const N: usize = 10> {
+///
+/// The number of price levels recorded as part
+/// of the level-2 data can be customised
+/// using the `LEVELS` constant, for example:
+///
+/// ```
+/// use bourse_de::Env;
+///
+/// // Record 5 price levels
+/// let env = Env::<5>::new(0, 1, 1_000, true);
+/// ```
+///
+pub struct Env<const LEVELS: usize = 10> {
     /// Time-length of each simulation step
     step_size: Nanos,
     /// Simulated order book
-    order_book: OrderBook<N>,
+    order_book: OrderBook<LEVELS>,
     /// Per step trade volume histories
     trade_vols: Vec<Vol>,
     /// Transaction queue
-    transactions: Vec<Event>,
+    transactions: Vec<Event<OrderId>>,
     /// Current level 2 market data
-    level_2_data: Level2Data<N>,
+    level_2_data: Level2Data<LEVELS>,
     /// Level 2 data history
-    level_2_data_records: Level2DataRecords<N>,
+    level_2_data_records: Level2DataRecords<LEVELS>,
 }
 
-impl<const N: usize> Env<N> {
+impl<const LEVELS: usize> Env<LEVELS> {
     /// Initialise an empty environment
     ///
     /// # Arguments
@@ -216,7 +228,7 @@ impl<const N: usize> Env<N> {
         &self.level_2_data_records.volumes
     }
 
-    /// Get bid-ask touch histories
+    /// Get bid-ask touch volume histories
     pub fn get_touch_volumes(&self) -> (&Vec<Vol>, &Vec<Vol>) {
         (
             &self.level_2_data_records.volumes_at_levels.0[0],
@@ -224,7 +236,7 @@ impl<const N: usize> Env<N> {
         )
     }
 
-    /// Get bid-ask order_count histories
+    /// Get bid-ask order-count histories
     pub fn get_touch_order_counts(&self) -> (&Vec<OrderCount>, &Vec<OrderCount>) {
         (
             &self.level_2_data_records.orders_at_levels.0[0],
@@ -243,12 +255,12 @@ impl<const N: usize> Env<N> {
     }
 
     /// Get reference to the underlying orderbook
-    pub fn get_orderbook(&self) -> &OrderBook<N> {
+    pub fn get_orderbook(&self) -> &OrderBook<LEVELS> {
         &self.order_book
     }
 
     /// Get level 2 data history
-    pub fn get_level_2_data_history(&self) -> &Level2DataRecords<N> {
+    pub fn get_level_2_data_history(&self) -> &Level2DataRecords<LEVELS> {
         &self.level_2_data_records
     }
 
@@ -278,12 +290,12 @@ impl<const N: usize> Env<N> {
     }
 
     /// Reference to current level-2 market data
-    pub fn level_2_data(&self) -> &Level2Data<N> {
+    pub fn level_2_data(&self) -> &Level2Data<LEVELS> {
         &self.level_2_data
     }
 
     #[cfg(test)]
-    pub fn get_transactions(&self) -> &Vec<Event> {
+    pub fn get_transactions(&self) -> &Vec<Event<OrderId>> {
         &self.transactions
     }
 }

@@ -20,7 +20,7 @@ pub use random_agent::{RandomAgents, RandomMarketAgents};
 ///
 /// A set of agents that implement this trait
 /// can then be included in a struct using the
-/// [Agents] macro to combine multiple agent
+/// [AgentSet] macro to combine multiple agent
 /// types.
 ///
 /// # Examples
@@ -63,7 +63,7 @@ pub trait Agent {
 ///
 /// It's a common case that we want update to update
 /// a heterogeneous set of agents which can be
-/// automatically implemented with the [Agents] macro
+/// automatically implemented with the [AgentSet] macro
 /// as long as the agent types implement the [Agent]
 /// trait.
 ///

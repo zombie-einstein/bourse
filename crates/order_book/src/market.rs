@@ -6,8 +6,8 @@ use std::{array, path::Path};
 
 use super::{OrderBook, OrderError};
 use crate::types::{
-    AssetIdx, Level2Data, MarketEvent, MarketOrderId, Nanos, Order, OrderCount, Price, Side,
-    TraderId, Vol,
+    AssetIdx, Event, Level2Data, MarketOrderId, Nanos, Order, OrderCount, Price, Side, TraderId,
+    Vol,
 };
 
 /// Multi asset market combining several [OrderBook]
@@ -331,7 +331,7 @@ impl<const ASSETS: usize, const LEVELS: usize> Market<ASSETS, LEVELS> {
         self.order_books[order_id.0].modify_order(order_id.1, new_price, new_vol)
     }
 
-    /// Process an [MarketEvent] order instruction
+    /// Process a [Event] order instruction
     ///
     /// Processes an order instruction to place, cancel
     /// or modify an order
@@ -340,11 +340,11 @@ impl<const ASSETS: usize, const LEVELS: usize> Market<ASSETS, LEVELS> {
     ///
     /// - `event` - Order instruction with asset id
     ///
-    pub fn process_event(&mut self, event: MarketEvent) {
+    pub fn process_event(&mut self, event: Event<MarketOrderId>) {
         match event {
-            MarketEvent::New { order_id } => self.place_order(order_id),
-            MarketEvent::Cancellation { order_id } => self.cancel_order(order_id),
-            MarketEvent::Modify {
+            Event::New { order_id } => self.place_order(order_id),
+            Event::Cancellation { order_id } => self.cancel_order(order_id),
+            Event::Modify {
                 order_id,
                 new_price,
                 new_vol,

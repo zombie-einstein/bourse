@@ -40,23 +40,59 @@ pub struct OrderEntry {
 
 /// Order book with order and trade history
 ///
+/// An order-book tracks orders and performs
+/// trades for a single asset, as well as
+/// tracking trades with functionality to
+/// get current market data.
+///
 /// # Examples
+///
+/// An order-book is initialised with:
+///
+/// - *start-time*: The initial time to set for
+///   the order-book.
+/// - *tick-size*: The price difference between
+///   price levels.
 ///
 /// ```
 /// use bourse_book::{types, OrderBook};
 ///
-/// let mut book: OrderBook = OrderBook::new(0, 1, true);
+/// let start_time = 0;
+/// let tick_size = 1;
+///
+/// let mut book: OrderBook = OrderBook::new(
+///     start_time, tick_size, true
+/// );
+///
+/// // Create a new order and place it
+/// // on the order-book
 /// let order_id = book.create_order(
 ///     types::Side::Bid, 50, 101, Some(50)
 /// ).unwrap();
+///
 /// book.place_order(order_id);
+///
+/// // Get the current bid-ask prices
 /// let (bid, ask) = book.bid_ask();
+///
+/// // Cancel the precious order
 /// book.cancel_order(order_id);
 /// ```
 ///
+/// The number of price levels data returned as part
+/// of the level 2 data can be customised with the
+/// `LEVELS` constant parameter
+///
+/// ```
+/// use bourse_book::OrderBook;
+///
+/// // Track best 5 price levels
+/// let book = OrderBook::<5>::new(0, 1, true);
+/// ```
+///
 #[derive(Serialize, Deserialize)]
-#[serde(try_from = "OrderBookState<N>")]
-pub struct OrderBook<const N: usize = 10> {
+#[serde(try_from = "OrderBookState<LEVELS>")]
+pub struct OrderBook<const LEVELS: usize = 10> {
     /// Simulated time, intended to represent
     /// nano-seconds, but arbitrary units can
     /// be used without effecting functionality
@@ -105,7 +141,7 @@ impl fmt::Display for OrderError {
     }
 }
 
-impl<const N: usize> OrderBook<N> {
+impl<const LEVELS: usize> OrderBook<LEVELS> {
     /// Initialise a new orderbook
     ///
     /// Creates a new order empty order book (
@@ -120,6 +156,8 @@ impl<const N: usize> OrderBook<N> {
     /// - `trading` - Flag to indicate if trades will be
     ///   executed
     pub fn new(start_time: Nanos, tick_size: Price, trading: bool) -> Self {
+        assert!(tick_size > 0);
+
         Self {
             t: start_time,
             tick_size,
@@ -188,7 +226,7 @@ impl<const N: usize> OrderBook<N> {
     ///
     /// Returns an array of tuples containing the volume and
     /// number of orders at each price level from the touch.
-    pub fn ask_levels(&self) -> [(Vol, OrderCount); N] {
+    pub fn ask_levels(&self) -> [(Vol, OrderCount); LEVELS] {
         let start = self.bid_ask().1;
         core::array::from_fn(|i| {
             self.ask_side.vol_and_orders_at_price(
@@ -216,7 +254,7 @@ impl<const N: usize> OrderBook<N> {
     ///
     /// Returns an array of tuples containing the volume and
     /// number of orders at each price level from the touch.
-    pub fn bid_levels(&self) -> [(Vol, OrderCount); N] {
+    pub fn bid_levels(&self) -> [(Vol, OrderCount); LEVELS] {
         let start = self.bid_ask().0;
         core::array::from_fn(|i| {
             self.bid_side.vol_and_orders_at_price(
@@ -273,7 +311,7 @@ impl<const N: usize> OrderBook<N> {
     /// - Volume and number of orders at N levels (ticks)
     ///   above/below the bid ask (where N is 10 by default)
     ///
-    pub fn level_2_data(&self) -> Level2Data<N> {
+    pub fn level_2_data(&self) -> Level2Data<LEVELS> {
         let (bid_price, ask_price) = self.bid_ask();
         Level2Data {
             bid_price,
@@ -741,7 +779,7 @@ impl<const N: usize> OrderBook<N> {
     /// # Arguments
     ///
     /// - `event` - Order instruction
-    pub fn process_event(&mut self, event: Event) {
+    pub fn process_event(&mut self, event: Event<OrderId>) {
         match event {
             Event::New { order_id } => self.place_order(order_id),
             Event::Cancellation { order_id } => self.cancel_order(order_id),
@@ -833,7 +871,7 @@ fn match_orders(
 
 /// Dummy order book to enable deserialization
 #[derive(Deserialize)]
-struct OrderBookState<const N: usize = 10> {
+struct OrderBookState<const LEVELS: usize = 10> {
     t: Nanos,
     tick_size: Price,
     trade_vol: Vol,
@@ -850,10 +888,10 @@ impl fmt::Display for OrderBookConversionErrror {
     }
 }
 
-impl<const N: usize> std::convert::TryFrom<OrderBookState<N>> for OrderBook<{ N }> {
+impl<const LEVELS: usize> std::convert::TryFrom<OrderBookState<LEVELS>> for OrderBook<{ LEVELS }> {
     type Error = OrderBookConversionErrror;
 
-    fn try_from(state: OrderBookState<N>) -> Result<Self, Self::Error> {
+    fn try_from(state: OrderBookState<LEVELS>) -> Result<Self, Self::Error> {
         let mut bid_side = BidSide::default();
         let mut ask_side = AskSide::default();
 

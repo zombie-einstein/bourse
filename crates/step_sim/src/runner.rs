@@ -68,7 +68,7 @@ pub fn sim_runner<A: AgentSet>(
     }
 }
 
-/// Run a simulation for a fixed number of steps
+/// Run a multi-asset simulation for a fixed number of steps
 ///
 /// Each step updates the state of the agents (who
 /// in turn can submit instructions to the environment

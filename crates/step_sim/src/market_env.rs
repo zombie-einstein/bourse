@@ -1,15 +1,15 @@
 //! Multi-asset discrete event simulation environment
 //!
-//! Wraps a [Market] and provides
+//! Wraps a multi-asset [Market] and provides
 //! functionality to process instructions
 //! submitted by agents and to track market data
 //!
 use super::data::Level2DataRecords;
 use crate::types::{
-    AssetIdx, Level2Data, MarketEvent, Nanos, Order, OrderCount, Price, Side, Status, Trade,
-    TraderId, Vol,
+    AssetIdx, Event, Level2Data, MarketOrderId, Nanos, Order, OrderCount, Price, Side, Status,
+    Trade, TraderId, Vol,
 };
-use bourse_book::{types::MarketOrderId, Market, OrderError};
+use bourse_book::{Market, OrderError};
 use rand::seq::SliceRandom;
 use rand::RngCore;
 use std::{array, mem};
@@ -52,7 +52,7 @@ pub struct MarketEnv<const ASSETS: usize, const LEVELS: usize = 10> {
     /// Per step trade volume histories
     trade_vols: [Vec<Vol>; ASSETS],
     /// Transaction queue
-    transactions: Vec<MarketEvent>,
+    transactions: Vec<Event<MarketOrderId>>,
     /// Current level 2 market data
     level_2_data: [Level2Data<LEVELS>; ASSETS],
     /// Level 2 data history
@@ -171,7 +171,7 @@ impl<const ASSETS: usize, const LEVELS: usize> MarketEnv<ASSETS, LEVELS> {
         let order_id = self
             .market
             .create_order(asset, side, vol, trader_id, price)?;
-        self.transactions.push(MarketEvent::New { order_id });
+        self.transactions.push(Event::New { order_id });
         Ok(order_id)
     }
 
@@ -187,8 +187,7 @@ impl<const ASSETS: usize, const LEVELS: usize> MarketEnv<ASSETS, LEVELS> {
     /// - `order_id` - Id of the order to cancel
     ///
     pub fn cancel_order(&mut self, order_id: MarketOrderId) {
-        self.transactions
-            .push(MarketEvent::Cancellation { order_id })
+        self.transactions.push(Event::Cancellation { order_id })
     }
 
     /// Submit an instruction to modify an order
@@ -212,7 +211,7 @@ impl<const ASSETS: usize, const LEVELS: usize> MarketEnv<ASSETS, LEVELS> {
         new_price: Option<Price>,
         new_vol: Option<Vol>,
     ) {
-        self.transactions.push(MarketEvent::Modify {
+        self.transactions.push(Event::Modify {
             order_id,
             new_price,
             new_vol,
@@ -336,7 +335,7 @@ impl<const ASSETS: usize, const LEVELS: usize> MarketEnv<ASSETS, LEVELS> {
     }
 
     #[cfg(test)]
-    pub fn get_transactions(&self) -> &Vec<MarketEvent> {
+    pub fn get_transactions(&self) -> &Vec<Event<MarketOrderId>> {
         &self.transactions
     }
 }
