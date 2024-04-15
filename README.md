@@ -52,3 +52,12 @@ Examples can be run via cargo using
 ```
 cargo run --example ...
 ```
+
+## Contributing
+
+Bourse is in active development. If you notice a problem
+or have a feature suggestion please
+[open an issue](https://github.com/zombie-einstein/bourse/issues/new).
+
+Contributions are very welcome, see [here](.github/docs/developers.md)
+for development notes.
