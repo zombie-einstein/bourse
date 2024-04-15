@@ -1,8 +1,8 @@
 //! Discrete event market simulation library
 //!
-//! Implements a discrete event simulation
-//! environment ([Env]) and utilities for writing
-//! discrete event market simulations.
+//! Implements discrete event simulation
+//! environments ([Env] and [MarketEnv]) and utilities
+//! for writing discrete event market simulations.
 //!
 //! # Model
 //!
@@ -37,14 +37,14 @@
 //! ```
 //! use bourse_de::types::{Price, Side, Vol};
 //! use bourse_de::agents;
-//! use bourse_de::agents::Agent;
+//! use bourse_de::agents::{Agent, AgentSet};
 //! use bourse_de::{sim_runner, Env};
 //! use rand::{RngCore, Rng};
 //!
 //! // Define a set of agents using built
 //! // in definitions
-//! #[derive(agents::Agents)]
-//! struct SimAgents {
+//! #[derive(AgentSet)]
+//! struct Agents {
 //!     pub a: agents::MomentumAgent,
 //!     pub b: agents::NoiseAgent,
 //! }
@@ -72,7 +72,7 @@
 //!     price_dist_sigma: 1.0,
 //! };
 //!
-//! let mut agents = SimAgents {
+//! let mut agents = Agents {
 //!     a: agents::MomentumAgent::new(0, 10, m_params),
 //!     b: agents::NoiseAgent::new(10, 20, n_params),
 //! };
@@ -93,13 +93,13 @@
 //! trait. For a set of homogeneous agents (i.e. all the agents are the
 //! same type) this can be implemented directly.
 //!
-//! For a mixture of agent types, the [agents::Agents] macro can be used
+//! For a mixture of agent types, the [agents::AgentSet] macro can be used
 //! to automatically implement [agents::AgentSet] for a struct of agents
 //! all implementing [agents::Agent]. For examples
 //!
 //! ```
 //! use bourse_de::{Env, sim_runner};
-//! use bourse_de::agents::{Agent, AgentSet, Agents};
+//! use bourse_de::agents::{Agent, AgentSet};
 //! use rand::RngCore;
 //!
 //! struct AgentTypeA{}
@@ -118,16 +118,47 @@
 //!     ) {}
 //! }
 //!
-//! #[derive(Agents)]
-//! struct SimAgents {
+//! #[derive(AgentSet)]
+//! struct Agents {
 //!     pub a: AgentTypeA,
 //!     pub b: AgentTypeB,
 //! }
 //!
 //! let mut env = bourse_de::Env::new(0, 1, 1_000_000, true);
-//! let mut agents = SimAgents{a: AgentTypeA{}, b: AgentTypeB{}};
+//! let mut agents = Agents{a: AgentTypeA{}, b: AgentTypeB{}};
 //!
 //! sim_runner(&mut env, &mut agents, 101, 50, true);
+//! ```
+//!
+//! # Multi-Asset Simulation
+//!
+//! Simulations with multiple assets can be run in an equivalent
+//! manner using the multi-asset [MarketEnv]. There are
+//! also equivalent definitions of [agents::MarketAgentSet] and
+//! [market_sim_runner], for example
+//!
+//! ```
+//! use bourse_de::{MarketEnv, market_sim_runner, agents};
+//! use bourse_de::agents::MarketAgent;
+//! use rand::RngCore;
+//!
+//! struct AgentType{}
+//!
+//! impl agents::MarketAgent for AgentType{
+//!     fn update<R: RngCore, const M: usize, const N: usize>(
+//!         &mut self, env: &mut MarketEnv<M, N>, rng: &mut R
+//!     ) {}
+//! }
+//!
+//! #[derive(agents::MarketAgentSet)]
+//! struct Agents {
+//!     pub a: AgentType,
+//! }
+//!
+//! let mut env = MarketEnv::<4>::new(0, [1, 1, 1, 1], 1_000_000, true);
+//! let mut agents = Agents{a: AgentType{}};
+//!
+//! market_sim_runner(&mut env, &mut agents, 101, 50, true);
 //! ```
 //!
 //! # Randomness
@@ -139,9 +170,13 @@
 //!
 
 pub mod agents;
+mod data;
 mod env;
+mod market_env;
 mod runner;
 
 pub use bourse_book::{types, OrderError};
+pub use data::Level2DataRecords;
 pub use env::Env;
-pub use runner::sim_runner;
+pub use market_env::MarketEnv;
+pub use runner::{market_sim_runner, sim_runner};

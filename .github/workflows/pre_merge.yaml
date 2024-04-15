@@ -20,10 +20,12 @@ jobs:
           run: cargo fmt --all -- --check
         - name: Clippy
           run: cargo clippy -- -Dwarnings
-        - name: Random stepped example
+        - name: Random discrete-event example
           run: cargo run --example random_agents
         - name: Order book example
           run: cargo run --example order_book
+        - name: Multi-asset example
+          run: cargo run --example multi_asset
         - name: Build docs 📚
           run: cargo doc --no-deps
 

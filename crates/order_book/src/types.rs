@@ -16,6 +16,10 @@ pub type Vol = u32;
 pub type TraderId = u32;
 /// Count of orders
 pub type OrderCount = u32;
+/// Idx to an asset orderbook
+pub type AssetIdx = usize;
+/// Order Id along with asset idx
+pub type MarketOrderId = (AssetIdx, OrderId);
 
 /// Market side
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
@@ -221,22 +225,22 @@ impl Order {
     }
 }
 
-/// Order/transaction instruction
-pub enum Event {
+/// Order transaction instruction
+pub enum Event<ID> {
     /// Place an order on the market
     New {
         /// Id of the order to place
-        order_id: OrderId,
+        order_id: ID,
     },
     /// Cancel an order
     Cancellation {
         /// Id of the order to cancel
-        order_id: OrderId,
+        order_id: ID,
     },
     /// Modify an order
     Modify {
         // Id of the order to modify
-        order_id: OrderId,
+        order_id: ID,
         /// New price of the order
         new_price: Option<Price>,
         /// New volume of the order

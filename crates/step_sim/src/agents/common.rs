@@ -1,11 +1,12 @@
 //! Common agent behaviours and utilities
 //!
 
+use bourse_book::types::{AssetIdx, MarketOrderId};
 use rand::{Rng, RngCore};
 use rand_distr::Distribution;
 
 use crate::types::{OrderId, Price, Side, Status, TraderId, Vol};
-use crate::{Env, OrderError};
+use crate::{Env, MarketEnv, OrderError};
 
 /// Round a price up to the nearest tick and cast to a [Price]
 ///
@@ -137,6 +138,122 @@ pub fn place_sell_limit_order<R: RngCore, D: Distribution<f64>>(
     let price = mid_price + dist;
     let price = round_price_up(price, tick_size);
     env.place_order(Side::Ask, trade_vol, trader_id, Some(price))
+}
+
+/// Filter active orders and randomly cancel them
+///
+/// Filter a vec of [MarketOrderId] for those that are active and
+/// then randomly select orders for cancellation. Returns
+/// a list of [MarketOrderId] that will remain active.
+///
+/// # Arguments
+///
+/// - `env` - Simulation environment
+/// - `rng` - Random generator
+/// - `orders` - Vector of current order ids
+/// - `p_cancel` - Probability orders are cancelled
+///
+pub fn cancel_live_orders_market<R: RngCore, const M: usize, const N: usize>(
+    env: &mut MarketEnv<M, N>,
+    rng: &mut R,
+    orders: &[MarketOrderId],
+    p_cancel: f32,
+) -> Vec<MarketOrderId> {
+    let live_orders = orders
+        .iter()
+        .filter(|x| env.order_status(**x) == Status::Active);
+
+    let (live_orders, to_cancel): (Vec<MarketOrderId>, Vec<MarketOrderId>) = live_orders
+        .into_iter()
+        .partition(|_| rng.gen::<f32>() > p_cancel);
+
+    for order_id in to_cancel.into_iter() {
+        env.cancel_order(order_id);
+    }
+
+    live_orders
+}
+
+/// Place a buy order a random distance below the mid-price
+///
+/// <div class="warning">
+///
+/// Prices are rounded *down* to the nearest tick
+///
+/// </div>
+///
+/// # Arguments
+///
+/// - `env` - Simulation environment
+/// - `rng` -  Random generator
+/// - `price_dist` - Price sampling distribution
+/// - `mid_price` - Current mid-price
+/// - `tick_size` - Tick size (as a float)
+/// - `trade_vol` - Size of the trade
+/// - `asset` - Index of the asset to trade
+/// - `trader_id` - Id of the trader/agent
+///
+#[allow(clippy::too_many_arguments)]
+pub fn place_buy_limit_order_market<
+    R: RngCore,
+    D: Distribution<f64>,
+    const M: usize,
+    const N: usize,
+>(
+    env: &mut MarketEnv<M, N>,
+    rng: &mut R,
+    price_dist: D,
+    mid_price: f64,
+    tick_size: f64,
+    trade_vol: Vol,
+    asset: AssetIdx,
+    trader_id: TraderId,
+) -> Result<MarketOrderId, OrderError> {
+    let dist = price_dist.sample(rng).abs();
+    let price = mid_price - dist;
+    let price = round_price_down(price, tick_size);
+    env.place_order(asset, Side::Bid, trade_vol, trader_id, Some(price))
+}
+
+/// Place a sell order a random distance above the mid-price
+///
+/// <div class="warning">
+///
+/// Prices are rounded *up* to the nearest tick
+///
+/// </div>
+///
+/// # Arguments
+///
+/// - `env` - Simulation environment
+/// - `rng` -  Random generator
+/// - `price_dist` - Price sampling distribution
+/// - `mid_price` - Current mid-price
+/// - `tick_size` - Tick size (as a float)
+/// - `trade_vol` - Size of the trade
+/// - `asset` - Index of the asset to trade
+/// - `trader_id` - Id of the trader/agent
+///
+#[allow(clippy::too_many_arguments)]
+pub fn place_sell_limit_order_market<
+    R: RngCore,
+    D: Distribution<f64>,
+    const M: usize,
+    const N: usize,
+>(
+    env: &mut MarketEnv<M, N>,
+    rng: &mut R,
+    price_dist: D,
+    mid_price: f64,
+    tick_size: f64,
+    trade_vol: Vol,
+    asset: AssetIdx,
+    trader_id: TraderId,
+) -> Result<MarketOrderId, OrderError> {
+    let dist = price_dist.sample(rng).abs();
+    let price = mid_price + dist;
+    let price = round_price_up(price, tick_size);
+    env.place_order(asset, Side::Ask, trade_vol, trader_id, Some(price))
 }
 
 #[cfg(test)]

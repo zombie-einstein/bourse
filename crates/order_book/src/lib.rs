@@ -1,10 +1,13 @@
-//! Simulated order book
+//! Simulated order book and market
 //!
-//! Simulated order book designed for
-//! market simulations. Acts as
+//! Simulated order book and market designed
+//! for market simulations. Acts as
 //! matching engine, but also data
 //! structure tracking simulated orders
 //! and historical data.
+//!
+//! A [Market] wraps several [OrderBook]s allowing
+//! for simulations of markets of several assets.
 //!
 //! # Examples
 //!
@@ -77,6 +80,29 @@
 //! let loaded_book: OrderBook = OrderBook::load_json("foo.json").unwrap();
 //! ```
 //!
+//! ## Initialise and Updating a Market
+//!
+//! ```
+//! use bourse_book;
+//! use bourse_book::{types, Market};
+//!
+//! // Initialise a merket with 2 assets
+//! let mut market = Market::<2>::new(0, [1, 1], true);
+//!
+//! // Place a buy order for asset 0
+//! market.create_and_place_order(
+//!     0, types::Side::Bid, 10, 0, Some(100)
+//! ).unwrap();
+//!
+//! // Place a sell order for asset 2
+//! market.create_and_place_order(
+//!     1, types::Side::Ask, 10, 0, Some(100)
+//! ).unwrap();
+//!
+//! // Get current prices across assets
+//! let prices = market.bid_asks();
+//! ````
+//!
 //! # Notes
 //!
 //! - Orders are sorted by price-time priority. To
@@ -94,8 +120,10 @@
 //!   order entry, but does not immediately place
 //!   the order on the market.
 //!
+mod market;
 mod orderbook;
 mod side;
 pub mod types;
 
+pub use market::Market;
 pub use orderbook::{OrderBook, OrderError};

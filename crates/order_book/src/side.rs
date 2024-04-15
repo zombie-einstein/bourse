@@ -7,7 +7,7 @@ use std::collections::BTreeMap;
 
 use super::types::{Nanos, OrderCount, OrderId, OrderKey, Price, Side, Vol};
 
-/// Common side side functionality
+/// Common order-book side functionality
 pub trait SideFunctionality {
     /// Initialise a side
     fn new() -> Self;
