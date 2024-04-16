@@ -41,8 +41,8 @@ The Python API consists of
 - `./docs`: Sphinx documentation.
 - `./examples`: Python simulation examples.
 
-Bourse uses `hatch <https://hatch.pypa.io/latest/>`_ for
-dependency management and `maturin <https://github.com/PyO3/maturin>`_
+Bourse uses [hatch](https://hatch.pypa.io/latest) for
+dependency management and [maturin](https://github.com/PyO3/maturin)
 to build the combined Python-Rust package.
 
 Development commands can be run from a virtual environment
